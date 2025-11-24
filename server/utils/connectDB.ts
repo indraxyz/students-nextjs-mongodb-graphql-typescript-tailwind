@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-
-const mongodbUri = process.env.MONGODB_URI as string;
+import { env } from "@/server/config/env";
 
 // Connection state management
 let isConnected = false;
@@ -17,14 +16,36 @@ const connectionOptions: mongoose.ConnectOptions = {
   retryReads: true, // Retry failed reads
 };
 
+let connectionHandlersRegistered = false;
+
+const registerConnectionHandlers = () => {
+  if (connectionHandlersRegistered) return;
+  connectionHandlersRegistered = true;
+
+  mongoose.connection.on("connected", () => {
+    console.log("🎉 Connected to MongoDB successfully");
+  });
+
+  mongoose.connection.on("error", (err) => {
+    console.error("❌ MongoDB connection error:", err);
+    isConnected = false;
+    connectionPromise = null;
+  });
+
+  mongoose.connection.on("disconnected", () => {
+    console.log("⚠️ MongoDB disconnected");
+    isConnected = false;
+    connectionPromise = null;
+  });
+
+  process.on("SIGINT", async () => {
+    await disconnectDB();
+    process.exit(0);
+  });
+};
+
 export const connectDB = async (): Promise<typeof mongoose> => {
   try {
-    if (!mongodbUri) {
-      const error = new Error("MONGODB_URI environment variable is required");
-      console.error("❌ MONGODB_URI environment variable is not defined");
-      throw error;
-    }
-
     // Return existing connection if already connected
     if (isConnected && mongoose.connection.readyState === 1) {
       console.log("✅ Database already connected");
@@ -38,7 +59,7 @@ export const connectDB = async (): Promise<typeof mongoose> => {
     }
 
     // Create new connection promise
-    connectionPromise = mongoose.connect(mongodbUri, connectionOptions);
+    connectionPromise = mongoose.connect(env.MONGODB_URI, connectionOptions);
 
     const connection = await connectionPromise;
 
@@ -46,28 +67,8 @@ export const connectDB = async (): Promise<typeof mongoose> => {
     isConnected = true;
     connectionPromise = null;
 
-    // Handle connection events
-    mongoose.connection.on("connected", () => {
-      console.log("🎉 Connected to MongoDB successfully");
-    });
-
-    mongoose.connection.on("error", (err) => {
-      console.error("❌ MongoDB connection error:", err);
-      isConnected = false;
-      connectionPromise = null;
-    });
-
-    mongoose.connection.on("disconnected", () => {
-      console.log("⚠️ MongoDB disconnected");
-      isConnected = false;
-      connectionPromise = null;
-    });
-
-    // Handle process termination
-    process.on("SIGINT", async () => {
-      await disconnectDB();
-      process.exit(0);
-    });
+    // Register connection event handlers (only once)
+    registerConnectionHandlers();
 
     return connection;
   } catch (error) {

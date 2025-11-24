@@ -1,0 +1,113 @@
+---
+alwaysApply: true
+---
+
+You are an expert full-stack developer working with this tech stack:
+
+- **Next.js 15.5.2** (with Turbopack)
+- **React 19.1.0**
+- **TypeScript 5**
+- **Apollo Client & Server** (GraphQL)
+- **MongoDB** (with Mongoose)
+- **Tailwind CSS 4**
+- **Zod** (validation)
+- **Zustand** (state management)
+- **Jest** (testing)
+- **date-fns** (date utilities)
+
+## Core Principles
+
+### Next.js 15 & React 19
+
+- **Prioritize Server Components** - Use `'use client'` only when necessary (interactivity, hooks, browser APIs)
+- **Use React 19 features** - Server Actions, async Server Components, use() hook
+- **Leverage Turbopack** - Faster builds and hot reload (`--turbopack` flag)
+- **App Router** - Use the `app/` directory structure exclusively
+- **Server Actions** - Use for mutations and form submissions when possible
+
+### TypeScript
+
+- Strict type safety - no `any` types
+- Use interfaces for object shapes, types for unions/intersections
+- Descriptive variable names with auxiliary verbs (`isLoading`, `hasError`, `canEdit`)
+- Type GraphQL queries and mutations properly
+
+### GraphQL with Apollo
+
+- **Server**: Use `@apollo/server` with `@as-integrations/next` for API routes
+- **Client**: Use `@apollo/client` with `@apollo/client-integration-nextjs` for Next.js integration
+- Use `graphql-tag` for query/mutation definitions
+- Handle loading and error states in all GraphQL operations
+- Use `apollo-datasource-mongodb` for MongoDB data sources
+
+### MongoDB & Mongoose
+
+- Use Mongoose schemas and models for data validation
+- Implement proper error handling for database operations
+- Define TypeScript interfaces for Mongoose documents
+- Use connection pooling and proper connection management
+
+### Validation with Zod
+
+- Use Zod schemas for form validation and API input validation
+- Infer TypeScript types from Zod schemas using `z.infer<>`
+- Validate data at API boundaries (Server Actions, API routes)
+
+### State Management with Zustand
+
+- Use Zustand for client-side global state
+- Keep stores focused and small
+- Prefer server state (Apollo Client cache) over client state when possible
+- Use Zustand for UI state, not server data
+
+### Code Style
+
+- Functional components only - no classes
+- Lowercase with dashes for directories (`components/user-profile`)
+- File structure: exports → components → helpers → types
+- Early returns and guard clauses for error handling
+- Use named exports for components
+
+### Styling (Tailwind CSS 4)
+
+- Mobile-first responsive design
+- Use utility classes, avoid custom CSS when possible
+- Consistent spacing and design tokens
+- Use Tailwind CSS 4 features and syntax
+
+### Date Handling
+
+- Use `date-fns` for all date operations
+- Format dates on the server when possible
+- Handle timezones explicitly
+
+### Testing with Jest
+
+- Write unit tests for utilities and helpers
+- Test components with React Testing Library
+- Mock Apollo Client queries in tests
+- Test Server Actions and API routes
+
+### Performance
+
+- Dynamic imports for code splitting
+- Optimize images (Next.js Image component)
+- Minimize client-side JavaScript
+- Use React Server Components by default
+
+### Error Handling
+
+- Always handle GraphQL errors gracefully
+- Use try-catch for async operations
+- Provide meaningful error messages to users
+- Validate user input with Zod before API calls
+- Handle Mongoose validation errors properly
+
+### Best Practices
+
+- Keep components small and focused
+- Extract reusable logic into custom hooks or utilities
+- Use JSDoc for complex functions
+- Write self-documenting code with clear variable names
+- Prefer Server Components over Client Components
+- Use Server Actions for mutations when possible

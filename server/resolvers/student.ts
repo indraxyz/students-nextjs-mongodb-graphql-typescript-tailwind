@@ -1,116 +1,181 @@
+import { formatISO } from "date-fns";
+import {
+  StudentParent,
+  QueryArgs,
+  StudentQueryArgs,
+  CreateStudentArgs,
+  UpdateStudentArgs,
+  DeleteStudentArgs,
+  ApolloContext,
+} from "@/server/types/graphql";
+import {
+  studentInputSchema,
+  searchStudentInputSchema,
+} from "@/server/schemas/validation";
+import {
+  ValidationError,
+  NotFoundError,
+  DatabaseError,
+} from "@/server/utils/errors";
+
+const formatDate = (date: Date | string | undefined): string => {
+  if (!date) {
+    return formatISO(new Date());
+  }
+
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      console.warn("Invalid date:", date);
+      return formatISO(new Date());
+    }
+    return formatISO(dateObj);
+  } catch (error) {
+    console.error("Error parsing date:", error);
+    return formatISO(new Date());
+  }
+};
+
 const resolvers = {
   Student: {
-    // Resolver untuk mengkonversi _id menjadi id
-    id: (parent: any) => parent._id?.toString() || parent.id,
-
-    // Resolver untuk mengkonversi Date menjadi ISO string
-    createdAt: (parent: any) => {
-      if (parent.createdAt) {
-        try {
-          const date =
-            parent.createdAt instanceof Date
-              ? parent.createdAt
-              : new Date(parent.createdAt);
-
-          if (isNaN(date.getTime())) {
-            console.warn("Invalid createdAt date:", parent.createdAt);
-            return new Date().toISOString();
-          }
-
-          return date.toISOString();
-        } catch (error) {
-          console.error("Error parsing createdAt:", error);
-          return new Date().toISOString();
-        }
+    id: (parent: StudentParent): string => {
+      if (parent.id) return parent.id;
+      if (parent._id) {
+        return typeof parent._id === "string"
+          ? parent._id
+          : parent._id.toString();
       }
-      return new Date().toISOString();
+      throw new Error("Student ID is missing");
     },
 
-    updatedAt: (parent: any) => {
-      if (parent.updatedAt) {
-        try {
-          const date =
-            parent.updatedAt instanceof Date
-              ? parent.updatedAt
-              : new Date(parent.updatedAt);
+    createdAt: (parent: StudentParent): string => {
+      return formatDate(parent.createdAt);
+    },
 
-          if (isNaN(date.getTime())) {
-            console.warn("Invalid updatedAt date:", parent.updatedAt);
-            return new Date().toISOString();
-          }
-
-          return date.toISOString();
-        } catch (error) {
-          console.error("Error parsing updatedAt:", error);
-          return new Date().toISOString();
-        }
-      }
-      return new Date().toISOString();
+    updatedAt: (parent: StudentParent): string => {
+      return formatDate(parent.updatedAt);
     },
   },
   Query: {
-    students: async (
-      _: any,
-      { input }: { input?: any },
-      context: {
-        dataSources: { students: { getAllStudents: (params?: any) => any } };
-      }
-    ) => {
+    students: async (_: unknown, args: QueryArgs, context: ApolloContext) => {
       try {
-        return await context.dataSources.students.getAllStudents(input || {});
+        const validatedInput = searchStudentInputSchema.parse(args.input || {});
+        return await context.dataSources.students.getAllStudents(
+          validatedInput
+        );
       } catch (error) {
-        throw new Error("Failed to fetch students");
+        if (error instanceof Error && error.name === "ZodError") {
+          throw new ValidationError("Invalid search parameters", {
+            search: error.message,
+          });
+        }
+        throw new DatabaseError("Failed to fetch students", error);
       }
     },
     student: async (
-      _: any,
-      { id }: { id: string },
-      context: {
-        dataSources: {
-          students: { getStudent: (params: { id: string }) => any };
-        };
-      }
+      _: unknown,
+      args: StudentQueryArgs,
+      context: ApolloContext
     ) => {
       try {
-        return await context.dataSources.students.getStudent({ id });
+        if (!args.id) {
+          throw new ValidationError("Student ID is required");
+        }
+        const student = await context.dataSources.students.getStudent({
+          id: args.id,
+        });
+        if (!student) {
+          throw new NotFoundError("Student", args.id);
+        }
+        return student;
       } catch (error) {
-        throw new Error("Failed to fetch student");
+        if (
+          error instanceof NotFoundError ||
+          error instanceof ValidationError
+        ) {
+          throw error;
+        }
+        throw new DatabaseError("Failed to fetch student", error);
       }
     },
   },
   Mutation: {
-    createStudent: async (_: any, { input }: any, context: any) => {
+    createStudent: async (
+      _: unknown,
+      args: CreateStudentArgs,
+      context: ApolloContext
+    ) => {
       try {
+        const validatedInput = studentInputSchema.parse(args.input);
         const newStudent = await context.dataSources.students.createStudent({
-          input,
+          input: validatedInput,
         });
         return newStudent;
       } catch (error) {
-        throw new Error("Failed to create student");
+        if (error instanceof Error && error.name === "ZodError") {
+          throw new ValidationError("Invalid student data", {
+            validation: error.message,
+          });
+        }
+        throw new DatabaseError("Failed to create student", error);
       }
     },
     updateStudent: async (
-      _: any,
-      { id, input }: { id: string; input: any },
-      context: any
+      _: unknown,
+      args: UpdateStudentArgs,
+      context: ApolloContext
     ) => {
       try {
+        if (!args.id) {
+          throw new ValidationError("Student ID is required");
+        }
+        const validatedInput = studentInputSchema.parse(args.input);
         const updatedStudent = await context.dataSources.students.updateStudent(
           {
-            input: { id, ...input },
+            input: { id: args.id, ...validatedInput },
           }
         );
+        if (!updatedStudent) {
+          throw new NotFoundError("Student", args.id);
+        }
         return updatedStudent;
       } catch (error) {
-        throw new Error("Failed to update student");
+        if (
+          error instanceof NotFoundError ||
+          error instanceof ValidationError
+        ) {
+          throw error;
+        }
+        throw new DatabaseError("Failed to update student", error);
       }
     },
-    deleteStudent: async (_: any, { id }: { id: string }, context: any) => {
+    deleteStudent: async (
+      _: unknown,
+      args: DeleteStudentArgs,
+      context: ApolloContext
+    ) => {
       try {
-        const result = await context.dataSources.students.deleteStudent({ id });
+        if (!args.id) {
+          throw new ValidationError("Student ID is required");
+        }
+        const student = await context.dataSources.students.getStudent({
+          id: args.id,
+        });
+        if (!student) {
+          throw new NotFoundError("Student", args.id);
+        }
+        const result = await context.dataSources.students.deleteStudent({
+          id: args.id,
+        });
         return result;
       } catch (error) {
-        throw new Error("Failed to delete student");
+        if (
+          error instanceof NotFoundError ||
+          error instanceof ValidationError
+        ) {
+          throw error;
+        }
+        throw new DatabaseError("Failed to delete student", error);
       }
     },
   },

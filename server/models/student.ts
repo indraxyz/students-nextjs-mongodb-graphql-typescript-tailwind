@@ -1,49 +1,40 @@
 import mongoose from "mongoose";
+
 const { Schema } = mongoose;
 
 const studentSchema = new Schema(
   {
-    // Define user fields here matching the GraphQL schema
-    name: { type: String, required: [true, "name fields are required"] },
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+      minlength: [2, "Name must be at least 2 characters"],
+      maxlength: [100, "Name must be less than 100 characters"],
+    },
     email: {
       type: String,
-      required: [true, "email fields are required"],
+      required: [true, "Email is required"],
+      trim: true,
+      lowercase: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please provide a valid email"],
     },
     age: {
       type: Number,
-      required: [true, "age fields are required"],
+      required: [true, "Age is required"],
+      min: [1, "Age must be at least 1"],
+      max: [120, "Age must be less than 120"],
     },
     address: {
       type: String,
-      required: [true, "address fields are required"],
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
+      required: [true, "Address is required"],
+      trim: true,
+      minlength: [5, "Address must be at least 5 characters"],
+      maxlength: [500, "Address must be less than 500 characters"],
     },
   },
   {
-    timestamps: true, // Enable automatic timestamps
-    versionKey: false, // Disable __v field
-  }
-);
-
-// Pre-save middleware untuk update updatedAt
-studentSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
-
-// Pre-update middleware untuk update updatedAt pada update operations
-studentSchema.pre(
-  ["updateOne", "findOneAndUpdate", "updateMany"],
-  function (next) {
-    this.set({ updatedAt: new Date() });
-    next();
+    timestamps: true,
+    versionKey: false,
   }
 );
 

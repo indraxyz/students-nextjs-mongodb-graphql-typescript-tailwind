@@ -1,46 +1,30 @@
-// MongoDB Data Source for Students
 import Student from "../models/student";
 import { MongoDataSource } from "apollo-datasource-mongodb";
-import { ObjectId } from "mongodb";
 import { StudentDocument } from "../../app/study-graphql/types/student";
+import { StudentInput, SearchStudentInput } from "../schemas/validation";
+import { DatabaseError, NotFoundError } from "../utils/errors";
 
 export default class Students extends MongoDataSource<StudentDocument> {
-  // Function to fetch all students with filtering, sorting, and pagination
-  async getAllStudents({
-    searchTerm,
-    sortBy = "name",
-    sortOrder = "asc",
-    limit = 50,
-    offset = 0,
-  }: {
-    searchTerm?: string;
-    sortBy?: string;
-    sortOrder?: string;
-    limit?: number;
-    offset?: number;
-  } = {}) {
+  async getAllStudents(input: SearchStudentInput): Promise<StudentDocument[]> {
     try {
-      let query = {};
+      const { searchTerm, sortBy, sortOrder, limit, offset } = input;
+      let query: Record<string, unknown> = {};
 
-      // Build search query if searchTerm is provided (same logic as searchStudents)
       if (searchTerm && searchTerm.trim() !== "") {
-        const searchRegex = new RegExp(searchTerm, "i"); // Case-insensitive search
+        const searchRegex = new RegExp(searchTerm, "i");
         query = {
           $or: [
             { name: searchRegex },
             { email: searchRegex },
             { address: searchRegex },
-            // For age search, check if searchTerm is a number
             ...(isNaN(Number(searchTerm)) ? [] : [{ age: Number(searchTerm) }]),
           ],
         };
       }
 
-      // Build sort object
-      const sortObj: any = {};
+      const sortObj: Record<string, 1 | -1> = {};
       sortObj[sortBy] = sortOrder === "desc" ? -1 : 1;
 
-      // Execute query with sorting, limit, and offset
       const students = await Student.find(query)
         .sort(sortObj)
         .limit(limit)
@@ -48,85 +32,94 @@ export default class Students extends MongoDataSource<StudentDocument> {
 
       return students;
     } catch (error) {
-      throw new Error("Failed to fetch students");
+      throw new DatabaseError("Failed to fetch students", error);
     }
   }
 
-  // Function to fetch a single student
-  async getStudent({ id }: { id: string }) {
+  async getStudent({ id }: { id: string }): Promise<StudentDocument | null> {
     try {
+      if (!id) {
+        throw new Error("Student ID is required");
+      }
       return await Student.findById(id);
     } catch (error) {
-      throw new Error("Failed to fetch student");
+      if (
+        error instanceof Error &&
+        error.message === "Student ID is required"
+      ) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch student", error);
     }
   }
 
-  // Function to create a new student
-  async createStudent({ input }: any) {
+  async createStudent({
+    input,
+  }: {
+    input: StudentInput;
+  }): Promise<StudentDocument> {
     try {
-      const now = new Date();
-      const studentData = {
-        ...input,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      const newStudent = await Student.create(studentData);
-      console.log("Created student with timestamps:", {
-        id: newStudent._id,
-        createdAt: newStudent.createdAt,
-        updatedAt: newStudent.updatedAt,
-      });
-
+      const newStudent = await Student.create(input);
       return newStudent;
     } catch (error) {
-      console.error("Error creating student:", error);
-      throw new Error("Failed to create student");
+      if (error instanceof Error && error.name === "ValidationError") {
+        throw new DatabaseError(`Validation failed: ${error.message}`, error);
+      }
+      throw new DatabaseError("Failed to create student", error);
     }
   }
 
-  // Function to update existing student
-  async updateStudent({ input }: any) {
+  async updateStudent({
+    input,
+  }: {
+    input: StudentInput & { id: string };
+  }): Promise<StudentDocument> {
     try {
       const { id, ...updateData } = input;
-      const now = new Date();
 
-      const updatedStudent = await Student.findByIdAndUpdate(
-        id,
-        {
-          ...updateData,
-          updatedAt: now,
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-
-      if (!updatedStudent) {
-        throw new Error("Student not found");
+      if (!id) {
+        throw new Error("Student ID is required");
       }
 
-      console.log("Updated student with timestamps:", {
-        id: updatedStudent._id,
-        createdAt: updatedStudent.createdAt,
-        updatedAt: updatedStudent.updatedAt,
+      const updatedStudent = await Student.findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
       });
+
+      if (!updatedStudent) {
+        throw new NotFoundError("Student", id);
+      }
 
       return updatedStudent;
     } catch (error) {
-      console.error("Error updating student:", error);
-      throw new Error("Failed to update student");
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      if (error instanceof Error && error.name === "ValidationError") {
+        throw new DatabaseError(`Validation failed: ${error.message}`, error);
+      }
+      throw new DatabaseError("Failed to update student", error);
     }
   }
 
-  // Function to delete existing student
   async deleteStudent({ id }: { id: string }): Promise<string> {
     try {
-      await Student.findByIdAndDelete(id);
+      if (!id) {
+        throw new Error("Student ID is required");
+      }
+
+      const deletedStudent = await Student.findByIdAndDelete(id);
+
+      if (!deletedStudent) {
+        throw new NotFoundError("Student", id);
+      }
+
       return "Student deleted successfully";
     } catch (error) {
-      throw new Error("Failed to delete student");
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to delete student", error);
     }
   }
 }

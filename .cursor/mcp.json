@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/kisum/javascript-nextjs"
+    },
+    "tailwindcss Docs": {
+      "url": "https://gitmcp.io/tailwindlabs/tailwindcss"
+    },
+    "react Docs": {
+      "url": "https://gitmcp.io/reactjs/react.dev"
+    },
+    "nextjs Docs": {
+      "url": "https://gitmcp.io/vercel/next.js"
+    },
+    "mongodb Docs": { "url": "https://gitmcp.io/mongodb/mongo" },
+    "graphql docs": { "url": "https://gitmcp.io/graphql/graphql.github.io" },
+    "apollo server Docs": {
+      "url": "https://gitmcp.io/apollographql/apollo-server"
+    },
+    "apollo client Docs": {
+      "url": "https://gitmcp.io/apollographql/apollo-clients"
+    },
+    "apolloo int next": {
+      "url": "https://gitmcp.io/apollo-server-integrations/apollo-server-integration-next"
+    }
+  }
+}

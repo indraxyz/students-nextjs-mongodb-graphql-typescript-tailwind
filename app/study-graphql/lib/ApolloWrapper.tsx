@@ -7,7 +7,7 @@ import {
   InMemoryCache,
 } from "@apollo/client-integration-nextjs";
 
-// if production use process.env.NEXT_PUBLIC_GRAPHQL_URL else use http://localhost:3000/api/graphql
+// works on dev and prod
 const graphqlUrl = "/api/graphql";
 
 // have a function to create a client for you
@@ -28,7 +28,13 @@ function makeClient() {
   // use the `ApolloClient` from "@apollo/client-integration-nextjs"
   return new ApolloClient({
     // use the `InMemoryCache` from "@apollo/client-integration-nextjs"
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      typePolicies: {
+        Student: {
+          keyFields: ["id"], // Use 'id' instead of '_id' since GraphQL schema returns 'id'
+        },
+      },
+    }),
     link: httpLink,
   });
 }
