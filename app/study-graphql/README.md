@@ -1,264 +1,277 @@
-# Student Management System dengan GraphQL
+# Student Management System with GraphQL
 
-Implementasi sederhana sistem manajemen students menggunakan Apollo Client, Next.js App Router, TypeScript, dan Tailwind CSS.
+A student management system implementation using Apollo Client, Next.js App Router, TypeScript, and Tailwind CSS with feature-based architecture.
 
-## 🏗️ Struktur Proyek
+## Project Structure
 
 ```
 app/study-graphql/
-├── components/           # Komponen UI
-│   ├── SimpleStudentManagement.tsx  # Komponen utama (SEDERHANA)
-│   ├── StudentManagement.tsx        # Komponen kompleks (legacy)
-│   ├── HybridStudentManagement.tsx  # Komponen hybrid (legacy)
-│   ├── StudentCard.tsx              # Card individual student
-│   ├── StudentForm.tsx              # Form create/edit
-│   ├── SearchBar.tsx                # Search dan filter
-│   ├── Pagination.tsx               # Pagination
-│   ├── LoadingSpinner.tsx           # Loading indicator
-│   ├── ErrorMessage.tsx             # Error display
-│   └── index.ts                     # Export barrel
-├── hooks/               # Custom hooks (untuk komponen kompleks)
-├── graphql/             # GraphQL operations
-│   ├── queries.ts               # GraphQL queries
-│   └── mutations.ts             # GraphQL mutations
-├── lib/                 # Apollo Client Configuration
-│   ├── apollo-client.ts         # RSC Apollo Client
-│   ├── apollo-provider.tsx      # ApolloNextAppProvider wrapper
-│   └── make-client.ts           # Client factory function
-├── types/               # TypeScript types
-│   └── student.ts               # Student types
-└── page.tsx             # Main page component
+├── features/                    # Feature-based modules
+│   └── students/               # Student management feature
+│       ├── components/         # Feature-specific components
+│       │   ├── StudentManagement.tsx
+│       │   └── student-management/  # Sub-components
+│       │       ├── PageHeader.tsx
+│       │       ├── SearchToolbar.tsx
+│       │       ├── StatsBar.tsx
+│       │       ├── StudentCard.tsx
+│       │       ├── StudentFormModal.tsx
+│       │       ├── EmptyState.tsx
+│       │       ├── ToastBanner.tsx
+│       │       ├── ConfirmDialog.tsx
+│       │       ├── StateOverlay.tsx
+│       │       ├── FormField.tsx
+│       │       ├── types.ts
+│       │       └── index.ts
+│       ├── hooks/              # Feature-specific hooks
+│       │   ├── useStudentCRUD.ts
+│       │   ├── useStudentForm.ts
+│       │   ├── useStudentSearch.ts
+│       │   ├── useStudentUI.ts
+│       │   ├── useStudentManagement.ts
+│       │   └── index.ts
+│       ├── graphql/            # Feature-specific GraphQL operations
+│       │   ├── queries.ts
+│       │   ├── mutations.ts
+│       │   └── index.ts
+│       └── types/              # Feature-specific types
+│           └── student.ts
+│
+├── shared/                     # Shared utilities and components
+│   ├── hooks/                  # Reusable hooks
+│   │   ├── useDebounce.ts
+│   │   └── index.ts
+│   ├── lib/                    # Shared libraries/config
+│   │   └── ApolloWrapper.tsx
+│   └── utils/                  # Shared utilities
+│       ├── dateUtils.ts
+│       └── index.ts
+│
+├── page.tsx                    # Route page
+└── README.md                   # This file (includes architecture documentation)
 ```
 
-## 🎯 Fitur Utama
+## Main Features
 
-### ✅ CRUD Operations
+### CRUD Operations
 
-- **Create**: Tambah student baru
-- **Read**: Tampilkan daftar students
-- **Update**: Edit data student existing
-- **Delete**: Hapus student dengan konfirmasi
+- **Create**: Add new student with validation
+- **Read**: Display student list with pagination
+- **Update**: Edit existing student data
+- **Delete**: Delete student with confirmation dialog
 
-### 🔍 Search
+### Search & Filter
 
-- **Real-time search**: Cari berdasarkan nama, email, atau alamat
+- **Real-time search**: Search by name, email, or address
+- **Debounced search**: Optimized for performance
+- **Sorting**: Sort by any field
+- **Pagination**: Limit and offset for large datasets
 
-### 🎨 UI Features
+### UI Features
 
-- **Responsive design**: Grid layout yang adaptif
-- **Loading states**: Loading spinner
-- **Error handling**: Error messages dengan retry
-- **Modal forms**: Form dalam modal overlay
+- **Responsive design**: Adaptive grid layout
+- **Loading states**: Loading indicators for all operations
+- **Error handling**: Error messages with retry options
+- **Modal forms**: Form in modal overlay with ARIA support
+- **Toast notifications**: Non-intrusive success/error notifications
+- **Confirmation dialogs**: Custom dialog for delete confirmation
+- **Empty states**: Informative UI when no data is available
+- **Accessibility**: ARIA labels and keyboard navigation
 
-## 🚀 Komponen Utama
+## Main Components
 
-### **SimpleStudentManagement** - Komponen dengan Custom Hooks
+### **StudentManagement** - Main Component
 
-Komponen yang menggunakan custom hooks untuk separation of concerns:
-
-- **useStudentManagement** - Main hook yang menggabungkan semua functionality
-- **useStudentForm** - Form state dan validation
-- **useStudentCRUD** - Data operations (Create, Read, Update, Delete)
-- **useStudentSearch** - Search dan sorting dengan debouncing
-- **useStudentUI** - UI state management (modal, loading, etc)
+Main component that uses custom hooks for separation of concerns:
 
 ```typescript
-// Menggunakan main hook untuk kemudahan
-export default function SimpleStudentManagement() {
-  const {
-    // Data
-    students,
-    isLoading,
-    error,
+import { StudentManagement } from "@/app/study-graphql/features/students/components/StudentManagement";
 
-    // Search & Sort
-    searchTerm,
-    searchStats,
-    sortBy,
-    sortOrder,
-    sortOptions,
-
-    // Form
-    formData,
-    formErrors,
-    isSubmitting,
-
-    // UI State
-    showForm,
-    editingStudent,
-    isEditing,
-    isCreating,
-
-    // Actions
-    handleSearchChange,
-    handleSortChange,
-    toggleSortOrder,
-    handleInputChange,
-    handleSubmit,
-    handleCreate,
-    handleEdit,
-    handleDelete,
-    handleFormClose,
-
-    // Utilities
-    refetch,
-  } = useStudentManagement();
-
-  // ... UI implementation
+export default function Page() {
+  return <StudentManagement />;
 }
 ```
 
-### **StudentManagementAdvanced** - Komponen dengan Individual Hooks
+### Custom Hooks
 
-Komponen yang menggunakan hooks individual untuk kontrol yang lebih granular:
+#### **useStudentManagement** - Main Hook
+
+Main hook that combines all functionality:
 
 ```typescript
-// Menggunakan hooks individual untuk custom logic
-export default function StudentManagementAdvanced() {
-  // UI State Management
-  const ui = useStudentUI();
+const {
+  // Data
+  students,
+  isLoading,
+  error,
 
-  // Search & Sorting
-  const search = useStudentSearch({
-    students: [],
-    onSearchChange: (term) => {
-      /* custom logic */
-    },
-    onSortChange: (field, order) => {
-      /* custom logic */
-    },
-  });
+  // Search & Sort
+  searchTerm,
+  searchStats,
+  sortBy,
+  sortOrder,
+  sortOptions,
 
-  // CRUD Operations
-  const crud = useStudentCRUD({
-    searchTerm: search.debouncedSearchTerm,
-    sortBy: search.sortBy,
-    sortOrder: search.sortOrder,
-    limit: 50, // Custom limit
-  });
+  // Form
+  formData,
+  formErrors,
+  isSubmitting,
 
-  // Form Management
-  const form = useStudentForm({
-    editingStudent: ui.editingStudent,
-    onSubmit: async (data) => {
-      /* custom submit logic */
-    },
-    onReset: () => {
-      /* custom reset logic */
-    },
-  });
+  // UI State
+  showForm,
+  editingStudent,
+  isEditing,
+  isCreating,
 
-  // ... custom implementation
-}
+  // Actions
+  handleSearchChange,
+  handleSortChange,
+  toggleSortOrder,
+  handleInputChange,
+  handleSubmit,
+  handleCreate,
+  handleEdit,
+  handleDelete,
+  handleFormClose,
+
+  // Utilities
+  refetch,
+} = useStudentManagement();
 ```
 
-## 🚀 Cara Menggunakan
+#### **useStudentForm** - Form Management
 
-### 1. Akses Halaman
+Handles form state, validation, and submit logic.
 
-- Navigasi ke `/study-graphql` untuk mengakses aplikasi
+#### **useStudentCRUD** - Data Operations
 
-### 2. Operasi CRUD
+Handles Create, Read, Update, Delete operations with GraphQL.
 
-- **Tambah**: Klik tombol "Tambah Student"
-- **Edit**: Klik tombol "Edit" pada card student
-- **Hapus**: Klik tombol "Hapus" dengan konfirmasi
-- **Lihat**: Data ditampilkan dalam grid card
+#### **useStudentSearch** - Search & Sorting
 
-### 3. Search
+Handles search and sorting with debouncing.
 
-- Ketik di search bar untuk mencari berdasarkan nama, email, atau alamat
+#### **useStudentUI** - UI State Management
 
-## 🎯 Keuntungan Pendekatan Custom Hooks
+Handles UI state such as modals, loading, and interactions.
 
-### ✅ Separation of Concerns
+## UX Enhancements
 
-- Setiap hook memiliki tanggung jawab yang spesifik
-- Logic terpisah dari UI components
-- Mudah untuk testing individual
+- **Modal form** with full ARIA support and inline error feedback
+- **Search toolbar** responsive with clear labels for screen readers
+- **Notification banner** global replacement for `alert` to display success/error
+- **Confirmation dialog** custom replacement for `window.confirm`
+- **Separated components** (header, toolbar, cards, empty state) for better testable DX
+- **Clear loading states** for each operation
+- **Error boundaries** with user-friendly messages
 
-### ✅ Reusability
+## Usage
 
-- Hooks bisa digunakan di multiple components
-- Logic yang sama bisa di-share
-- Konsisten behavior across components
+### 1. Access Page
 
-### ✅ Maintainability
+- Navigate to `/study-graphql` to access the application
 
-- Mudah untuk debug dan fix bugs
-- Perubahan logic tidak mempengaruhi UI
-- Code lebih terorganisir
+### 2. CRUD Operations
 
-### ✅ Type Safety
+- **Add**: Click "Add Student" button in header
+- **Edit**: Click "Edit" button on student card
+- **Delete**: Click "Delete" button with confirmation dialog
+- **View**: Data displayed in responsive grid cards
 
-- Full TypeScript support
-- IntelliSense yang baik
-- Compile-time error checking
+### 3. Search & Sort
 
-### ✅ Performance
+- Type in search bar to search by name, email, or address
+- Select field for sorting from dropdown
+- Toggle sort order (asc/desc) with button
 
-- Optimized re-renders dengan proper memoization
-- Efficient state updates
-- Minimal unnecessary re-renders
+## Benefits of Feature-Based Architecture
 
-### ✅ Developer Experience
+### Scalability
 
-- IntelliSense yang lebih baik
-- Auto-completion untuk semua properties
-- Clear API untuk setiap hook
+- Easy to add new features without affecting existing ones
+- Each feature is self-contained
+- Clear boundaries between features
 
-## 🔧 Tech Stack
+### Maintainability
 
-- **Next.js 14** dengan App Router
-- **Apollo Client** untuk GraphQL
-- **TypeScript** untuk type safety
-- **Tailwind CSS** untuk styling
-- **MongoDB** sebagai database
+- Related code is grouped together
+- Easy to find and modify code
+- Changes in one feature don't affect others
 
-## 🚨 Error Handling
+### Testability
 
-- GraphQL errors ditampilkan dengan jelas
-- Network errors dengan retry options
-- Form validation real-time
-- Loading states yang proper
+- Features can be tested in isolation
+- Shared utilities can be tested separately
+- Clear dependencies
 
-## 📁 Struktur Hooks
+### Team Collaboration
 
+- Reduces merge conflicts with clear boundaries
+- Multiple developers can work on different features
+- Clear ownership
+
+### Reusability
+
+- Shared code is clearly separated
+- Features can reuse shared utilities
+- Components can be shared across features
+
+## Tech Stack
+
+- **Next.js 15** with App Router
+- **React 19** with Server Components
+- **Apollo Client** for GraphQL
+- **TypeScript** for type safety
+- **Tailwind CSS 4** for styling
+- **Zod** for validation
+- **date-fns** for date utilities
+
+## Error Handling
+
+- GraphQL errors displayed clearly
+- Network errors with retry options
+- Real-time form validation
+- Proper loading states
+- User-friendly custom error messages
+
+## Import Patterns
+
+### Feature Imports
+
+```typescript
+// From within a feature
+import { Student } from "../types/student";
+import { useStudentCRUD } from "../hooks";
+
+// From outside a feature
+import { Student } from "@/app/study-graphql/features/students/types/student";
+import { useStudentCRUD } from "@/app/study-graphql/features/students/hooks";
 ```
-hooks/
-├── useStudentForm.ts          # Form state dan validation
-├── useStudentCRUD.ts          # Data operations (CRUD)
-├── useStudentSearch.ts        # Search dan sorting
-├── useStudentUI.ts            # UI state management
-├── useStudentManagement.ts    # Main hook (composition)
-├── useDebounce.ts             # Utility hook
-├── useStudents.ts             # Legacy hooks
-├── index.ts                   # Export barrel
-└── README.md                  # Hooks documentation
+
+### Shared Imports
+
+```typescript
+// Shared utilities
+import { useDebounce } from "@/app/study-graphql/shared/hooks";
+import { formatDate } from "@/app/study-graphql/shared/utils";
+import { ApolloWrapper } from "@/app/study-graphql/shared/lib";
 ```
 
-## 🎯 Pilihan Implementasi
+## Documentation
 
-### 1. **SimpleStudentManagement** (Recommended)
+- [Root README](../../README.md) - Project overview
 
-- Menggunakan `useStudentManagement` hook
-- Semua functionality dalam satu hook
-- Mudah digunakan dan dipahami
-- Cocok untuk kebanyakan use cases
+## Best Practices
 
-### 2. **StudentManagementAdvanced**
-
-- Menggunakan hooks individual
-- Kontrol yang lebih granular
-- Custom logic yang lebih fleksibel
-- Cocok untuk requirements yang kompleks
-
-### 3. **Legacy Components**
-
-- `StudentManagement` - Implementasi lama dengan hooks individual
-- `HybridStudentManagement` - Implementasi hybrid
-- Tersedia sebagai referensi
+1. **Feature-Based Organization**: Keep feature code together
+2. **Shared Code**: Use `shared/` for reusable utilities
+3. **Type Safety**: Use TypeScript interfaces for all types
+4. **Component Size**: Keep components small and focused
+5. **Custom Hooks**: Extract reusable logic into hooks
+6. **Error Handling**: Handle errors gracefully with user-friendly messages
+7. **Accessibility**: Use ARIA labels and keyboard navigation
+8. **Performance**: Use memoization and debouncing where appropriate
 
 ---
 
-**Catatan**: Gunakan `SimpleStudentManagement` untuk implementasi standar, atau `StudentManagementAdvanced` jika memerlukan kontrol yang lebih granular. Semua hooks dirancang untuk memberikan developer experience yang optimal dengan TypeScript support penuh.
+**Note**: This structure is designed to provide optimal developer experience with full TypeScript support, high maintainability, and scalability for growing projects.

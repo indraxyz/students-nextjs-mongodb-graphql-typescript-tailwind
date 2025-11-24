@@ -1,4 +1,4 @@
-import StudentManagement from "./components/StudentManagement";
+import StudentManagement from "./features/students/components/StudentManagement";
 
 export default function StudyGraphQLPage() {
   return (
