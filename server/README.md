@@ -93,15 +93,17 @@ server/
 
 ### GraphQL Setup
 
-- Apollo Server with Next.js integration
+- Apollo Server with Next.js integration (`@as-integrations/next`)
+- GraphQL API endpoint: `/api/graphql` (handles both GET and POST)
 - Type-safe resolvers with TypeScript
 - Custom error formatting
 - DataSources for database operations
 - Schema-first approach with typeDefs
+- Lazy database connection on first request
 
 ## Adding a New Feature
 
-1. Create a new directory under `features/`
+1. Create a new directory under `features/`:
 
    ```bash
    mkdir -p server/features/your-feature/{datasources,models,resolvers,schemas,types}
@@ -122,6 +124,7 @@ server/
    - Add new dataSource to context
 
 4. Update `server/shared/graphql/types.ts`:
+
    - Add new dataSource to `ApolloContext` interface
 
 ## Import Patterns

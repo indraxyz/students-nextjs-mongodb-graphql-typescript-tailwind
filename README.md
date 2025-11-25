@@ -4,7 +4,7 @@ A modern full-stack application built with Next.js 15, MongoDB, and GraphQL usin
 
 ## Tech Stack
 
-- **Next.js 15.5.2** (App Router with Turbopack)
+- **Next.js 15.5.6** (App Router with Turbopack)
 - **React 19.1.0**
 - **TypeScript 5** (Strict mode)
 - **Apollo Server & Client** (GraphQL)
@@ -12,7 +12,6 @@ A modern full-stack application built with Next.js 15, MongoDB, and GraphQL usin
 - **Zod** (Runtime validation)
 - **Tailwind CSS 4**
 - **date-fns** (Date utilities)
-- **Zustand** (State management)
 - **Jest** (Testing)
 
 ## Features
@@ -64,13 +63,16 @@ pnpm dev
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+   - **Homepage** (`/`): Landing page with statistics and feature overview
+   - **Student Management** (`/src`): Full CRUD interface for managing students
+
 ## Project Structure
 
 ```
 ├── app/                           # Next.js App Router
 │   ├── api/
 │   │   └── graphql/              # GraphQL API route
-│   ├── src/                      # Student management feature 
+│   ├── src/                      # Student management feature
 │   │   ├── features/             # Feature-based modules
 │   │   │   └── students/         # Student feature
 │   │   │       ├── components/   # Feature components
@@ -81,7 +83,8 @@ pnpm dev
 │   │   │   ├── hooks/            # Reusable hooks
 │   │   │   ├── lib/              # Shared libraries
 │   │   │   └── utils/            # Shared utilities
-│   │   └── page.tsx              # Route page
+│   │   └── page.tsx              # Student management page (/src)
+│   ├── page.tsx                  # Homepage (/) with stats
 │   └── layout.tsx                # Root layout
 │
 ├── server/                        # Server-side code
@@ -113,7 +116,7 @@ Both frontend and backend follow a feature-based architecture:
 
 See detailed documentation:
 
-- Frontend: [`app/src/README.md`](app/src/README.md) - Includes architecture details 
+- Frontend: [`app/src/README.md`](app/src/README.md) - Includes architecture details
 - Backend: [`server/README.md`](server/README.md) - Includes architecture details
 
 ## Key Improvements
@@ -161,8 +164,6 @@ See detailed documentation:
 - `pnpm dev` - Start development server with Turbopack
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint
-- `pnpm test` - Run tests
 
 ## Best Practices
 

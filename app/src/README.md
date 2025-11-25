@@ -167,9 +167,10 @@ Handles UI state such as modals, loading, and interactions.
 
 ## Usage
 
-### 1. Access Page
+### 1. Access Pages
 
-- Navigate to `/src` to access the application
+- **Homepage** (`/`): Landing page with real-time statistics and feature overview
+- **Student Management** (`/src`): Full CRUD interface for managing students
 
 ### 2. CRUD Operations
 
@@ -218,10 +219,10 @@ Handles UI state such as modals, loading, and interactions.
 
 ## Tech Stack
 
-- **Next.js 15** with App Router
-- **React 19** with Server Components
+- **Next.js 15.5.6** with App Router and Turbopack
+- **React 19.1.0** with Server Components
 - **Apollo Client** for GraphQL
-- **TypeScript** for type safety
+- **TypeScript 5** (Strict mode) for type safety
 - **Tailwind CSS 4** for styling
 - **Zod** for validation
 - **date-fns** for date utilities
