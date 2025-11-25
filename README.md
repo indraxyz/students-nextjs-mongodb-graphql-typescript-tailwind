@@ -70,7 +70,7 @@ pnpm dev
 ├── app/                           # Next.js App Router
 │   ├── api/
 │   │   └── graphql/              # GraphQL API route
-│   ├── study-graphql/            # Student management feature
+│   ├── src/                      # Student management feature 
 │   │   ├── features/             # Feature-based modules
 │   │   │   └── students/         # Student feature
 │   │   │       ├── components/   # Feature components
@@ -113,7 +113,7 @@ Both frontend and backend follow a feature-based architecture:
 
 See detailed documentation:
 
-- Frontend: [`app/study-graphql/README.md`](app/study-graphql/README.md) - Includes architecture details
+- Frontend: [`app/src/README.md`](app/src/README.md) - Includes architecture details 
 - Backend: [`server/README.md`](server/README.md) - Includes architecture details
 
 ## Key Improvements
@@ -177,7 +177,7 @@ See detailed documentation:
 
 ## Documentation
 
-- [Frontend README](app/study-graphql/README.md) - Frontend feature documentation and architecture
+- [Frontend README](app/src/README.md) - Frontend feature documentation and architecture
 - [Backend README](server/README.md) - Backend architecture documentation
 
 ## License
