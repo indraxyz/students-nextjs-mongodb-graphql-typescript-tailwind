@@ -22,6 +22,10 @@
     },
     "apolloo int next": {
       "url": "https://gitmcp.io/apollo-server-integrations/apollo-server-integration-next"
+    },
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
     }
   }
 }

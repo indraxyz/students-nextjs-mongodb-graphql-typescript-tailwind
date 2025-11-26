@@ -1,14 +1,14 @@
 # Students Management - Next.js + MongoDB + GraphQL
 
-A modern full-stack application built with Next.js 15, MongoDB, and GraphQL using Apollo Server and Client. Features a feature-based architecture for optimal maintainability and scalability.
+A modern full-stack application built with Next.js 16, MongoDB, and GraphQL using Apollo Server and Client. Features a feature-based architecture for optimal maintainability and scalability.
 
 ## Tech Stack
 
-- **Next.js 15.5.6** (App Router with Turbopack)
-- **React 19.1.0**
+- **Next.js 16.0.4** (App Router with Turbopack)
+- **React 19.2.0**
 - **TypeScript 5** (Strict mode)
 - **Apollo Server & Client** (GraphQL)
-- **MongoDB** (with Mongoose)
+- **MongoDB** (with Typegoose)
 - **Zod** (Runtime validation)
 - **Tailwind CSS 4**
 - **date-fns** (Date utilities)
@@ -17,6 +17,7 @@ A modern full-stack application built with Next.js 15, MongoDB, and GraphQL usin
 ## Features
 
 - ✅ Type-safe GraphQL API with proper TypeScript types
+- ✅ Typegoose for enhanced TypeScript type inference with MongoDB
 - ✅ Runtime validation with Zod schemas
 - ✅ Environment variable validation
 - ✅ Custom error handling with proper error codes

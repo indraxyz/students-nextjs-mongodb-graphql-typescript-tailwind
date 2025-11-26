@@ -6,7 +6,7 @@ export const studentInputSchema = z.object({
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be less than 100 characters")
     .trim(),
-  email: z.string().email("Invalid email format").trim().toLowerCase(),
+  email: z.email("Invalid email format").trim().toLowerCase(),
   age: z
     .number()
     .int("Age must be an integer")
@@ -17,6 +17,7 @@ export const studentInputSchema = z.object({
     .min(5, "Address must be at least 5 characters")
     .max(500, "Address must be less than 500 characters")
     .trim(),
+  photo: z.string().nullable().optional(),
 });
 
 export const searchStudentInputSchema = z.object({

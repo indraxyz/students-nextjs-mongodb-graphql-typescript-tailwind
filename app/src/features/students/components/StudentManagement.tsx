@@ -74,11 +74,57 @@ export default function StudentManagementAdvanced() {
     };
   }, []);
 
+  const isMongoConnectionError = useCallback((error: unknown): boolean => {
+    if (!error || typeof error !== "object") return false;
+
+    // Check GraphQL error extensions
+    if (
+      "graphQLErrors" in error &&
+      Array.isArray((error as any).graphQLErrors)
+    ) {
+      const graphQLErrors = (error as any).graphQLErrors;
+      return graphQLErrors.some(
+        (err: any) =>
+          err?.extensions?.code === "MONGODB_CONNECTION_ERROR" ||
+          err?.message?.includes("Cannot connect to MongoDB") ||
+          err?.message?.includes("MongoDB Atlas")
+      );
+    }
+
+    // Check network error
+    if ("networkError" in error) {
+      const networkError = (error as any).networkError;
+      if (networkError?.result?.errors) {
+        return networkError.result.errors.some(
+          (err: any) =>
+            err?.extensions?.code === "MONGODB_CONNECTION_ERROR" ||
+            err?.message?.includes("Cannot connect to MongoDB")
+        );
+      }
+    }
+
+    // Check error message directly
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return (
+      errorMessage.includes("Cannot connect to MongoDB") ||
+      errorMessage.includes("MongoDB Atlas") ||
+      errorMessage.includes("MONGODB_CONNECTION_ERROR")
+    );
+  }, []);
+
   const parseErrorMessage = useCallback((error: unknown) => {
     if (error instanceof Error) {
       return error.message;
     }
-    return "Terjadi kesalahan. Silakan coba lagi.";
+    return "An error occurred. Please try again.";
+  }, []);
+
+  const getMongoErrorMessage = useCallback(() => {
+    return {
+      title: "Cannot Connect to MongoDB",
+      description:
+        "If you're using MongoDB Atlas M0 (free tier), the cluster may be paused after 30 days of inactivity. The system is waiting 10-30 seconds for it to wake up. Please wait a moment and try again.",
+    };
   }, []);
 
   const form = useStudentForm({
@@ -88,17 +134,66 @@ export default function StudentManagementAdvanced() {
       try {
         if (ui.isEditing && ui.editingStudent) {
           await crud.updateStudent(ui.editingStudent.id, data);
-          showToast("Student berhasil diperbarui");
+          showToast("Student updated successfully");
         } else {
           await crud.createStudent(data);
-          showToast("Student berhasil dibuat");
+          showToast("Student created successfully");
         }
         ui.hideForm();
       } catch (error) {
         const message = parseErrorMessage(error);
         setFormError(message);
         showToast(message, "error");
-        throw error;
+
+        // Extract field-specific errors from GraphQL error
+        if (error && typeof error === "object") {
+          // Check for GraphQL errors with field information
+          if (
+            "graphQLErrors" in error &&
+            Array.isArray((error as any).graphQLErrors)
+          ) {
+            const graphQLErrors = (error as any).graphQLErrors;
+            const fieldErrors: Record<string, string> = {};
+
+            graphQLErrors.forEach((err: any) => {
+              // Check if error has field information in extensions
+              if (
+                err?.extensions?.fields &&
+                typeof err.extensions.fields === "object"
+              ) {
+                Object.assign(fieldErrors, err.extensions.fields);
+              }
+            });
+
+            // Set field errors if any were found
+            if (Object.keys(fieldErrors).length > 0) {
+              form.setFieldErrors(fieldErrors);
+            }
+          }
+
+          // Check network error for field information
+          if ("networkError" in error) {
+            const networkError = (error as any).networkError;
+            if (networkError?.result?.errors) {
+              const fieldErrors: Record<string, string> = {};
+
+              networkError.result.errors.forEach((err: any) => {
+                if (
+                  err?.extensions?.fields &&
+                  typeof err.extensions.fields === "object"
+                ) {
+                  Object.assign(fieldErrors, err.extensions.fields);
+                }
+              });
+
+              if (Object.keys(fieldErrors).length > 0) {
+                form.setFieldErrors(fieldErrors);
+              }
+            }
+          }
+        }
+
+        console.error("Form submission error:", error);
       }
     },
     onReset: () => {
@@ -145,7 +240,7 @@ export default function StudentManagementAdvanced() {
 
     try {
       await crud.deleteStudent(confirmDeleteState.id);
-      showToast(`Student ${confirmDeleteState.name} berhasil dihapus`);
+      showToast(`Student ${confirmDeleteState.name} deleted successfully`);
     } catch (error) {
       const message = parseErrorMessage(error);
       showToast(message, "error");
@@ -165,11 +260,14 @@ export default function StudentManagementAdvanced() {
   // }
 
   if (crud.error) {
+    const isMongoError = isMongoConnectionError(crud.error);
+    const mongoError = isMongoError ? getMongoErrorMessage() : null;
+
     return (
       <StateOverlay
         variant="error"
-        title="Gagal memuat data"
-        description={crud.error.message}
+        title={mongoError?.title || "Failed to load data"}
+        description={mongoError?.description || crud.error.message}
         onRetry={crud.refetch}
       />
     );
@@ -229,9 +327,11 @@ export default function StudentManagementAdvanced() {
           errors={form.errors}
           isSubmitting={form.isSubmitting}
           onInputChange={form.handleInputChange}
+          onPhotoChange={form.handlePhotoChange}
           onSubmit={form.handleSubmit}
           onClose={ui.hideForm}
           formError={formError}
+          photoPreview={form.photoPreview}
         />
       )}
 

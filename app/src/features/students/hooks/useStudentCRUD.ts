@@ -65,14 +65,34 @@ export function useStudentCRUD({
         variables: { input },
       });
 
+      // main error handling is through try/catch and `createError`.
+
       if (result.data?.createStudent) {
         await refetch();
         return result.data.createStudent;
       }
 
-      throw new Error("Failed to create student");
+      // If no data and no errors, something unexpected happened
+      console.error("No data returned from mutation:", result);
+      throw new Error("Failed to create student: No data returned");
     } catch (error) {
       console.error("Error creating student:", error);
+
+      // Extract error message from Apollo error
+      if (error && typeof error === "object" && "graphQLErrors" in error) {
+        const apolloError = error as any;
+        if (apolloError.graphQLErrors && apolloError.graphQLErrors.length > 0) {
+          const errorMessage =
+            apolloError.graphQLErrors[0]?.message || "Failed to create student";
+          throw new Error(errorMessage);
+        }
+        if (apolloError.networkError) {
+          throw new Error(
+            apolloError.networkError.message || "Network error occurred"
+          );
+        }
+      }
+
       throw error;
     }
   };
@@ -86,14 +106,34 @@ export function useStudentCRUD({
         variables: { id, input },
       });
 
+      //  main error handling is through try/catch and `updateError`.
+
       if (result.data?.updateStudent) {
         await refetch();
         return result.data.updateStudent;
       }
 
-      throw new Error("Failed to update student");
+      // If no data and no errors, something unexpected happened
+      console.error("No data returned from mutation:", result);
+      throw new Error("Failed to update student: No data returned");
     } catch (error) {
       console.error("Error updating student:", error);
+
+      // Extract error message from Apollo error
+      if (error && typeof error === "object" && "graphQLErrors" in error) {
+        const apolloError = error as any;
+        if (apolloError.graphQLErrors && apolloError.graphQLErrors.length > 0) {
+          const errorMessage =
+            apolloError.graphQLErrors[0]?.message || "Failed to update student";
+          throw new Error(errorMessage);
+        }
+        if (apolloError.networkError) {
+          throw new Error(
+            apolloError.networkError.message || "Network error occurred"
+          );
+        }
+      }
+
       throw error;
     }
   };

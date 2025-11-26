@@ -10,7 +10,7 @@ server/
 │   └── students/               # Student management feature
 │       ├── datasources/       # Apollo DataSources
 │       │   └── Students.ts
-│       ├── models/            # Mongoose models
+│       ├── models/            # Typegoose models
 │       │   └── Student.ts
 │       ├── resolvers/         # GraphQL resolvers
 │       │   └── index.ts
@@ -174,19 +174,24 @@ import { ApolloContext } from "@/server/shared/graphql/types";
 ### Model (`features/students/models/Student.ts`)
 
 ```typescript
-import mongoose from "mongoose";
+import { prop, getModelForClass, modelOptions } from "@typegoose/typegoose";
 
-const studentSchema = new Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true },
-    // ...
+@modelOptions({
+  schemaOptions: {
+    timestamps: true,
+    versionKey: false,
   },
-  { timestamps: true }
-);
+})
+export class Student {
+  @prop({ required: true, minlength: 2, maxlength: 100 })
+  name!: string;
 
-export default mongoose.models.Student ||
-  mongoose.model("Student", studentSchema);
+  @prop({ required: true, unique: true })
+  email!: string;
+  // ...
+}
+
+export const StudentModel = getModelForClass(Student);
 ```
 
 ### Validation Schema (`features/students/schemas/validation.ts`)
@@ -207,12 +212,12 @@ export type StudentInput = z.infer<typeof studentInputSchema>;
 
 ```typescript
 import { MongoDataSource } from "apollo-datasource-mongodb";
-import Student from "../models/Student";
+import { StudentModel } from "../models/Student";
 import { StudentDocument } from "../types";
 
 export default class Students extends MongoDataSource<StudentDocument> {
   async getAllStudents(input: SearchStudentInput): Promise<StudentDocument[]> {
-    // Implementation
+    // Implementation using StudentModel
   }
 }
 ```

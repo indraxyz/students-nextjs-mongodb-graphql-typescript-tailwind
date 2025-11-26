@@ -8,9 +8,11 @@ export interface StudentFormModalProps {
   errors: StudentFormErrors;
   isSubmitting: boolean;
   onInputChange: (field: keyof StudentFormData, value: string | number) => void;
+  onPhotoChange?: (file: File | null) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
   formError: string | null;
+  photoPreview?: string | null;
 }
 
 export function StudentFormModal({
@@ -19,9 +21,11 @@ export function StudentFormModal({
   errors,
   isSubmitting,
   onInputChange,
+  onPhotoChange,
   onSubmit,
   onClose,
   formError,
+  photoPreview,
 }: StudentFormModalProps) {
   return (
     <div
@@ -119,17 +123,44 @@ export function StudentFormModal({
             )}
           />
 
+          <FormField
+            label="Photo"
+            error={errors.photo}
+            render={(inputId) => (
+              <div className="space-y-2">
+                {photoPreview && (
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-gray-300">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <input
+                  id={inputId}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    onPhotoChange?.(file);
+                  }}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <p className="text-xs text-gray-500">
+                  Max file size: 1MB. Allowed formats: JPG, JPEG, PNG
+                </p>
+              </div>
+            )}
+          />
+
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
               className="flex-1 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting
-                ? "Saving..."
-                : isEditing
-                ? "Update Student"
-                : "Add Student"}
+              {isSubmitting ? "Saving..." : isEditing ? "Update" : "Add"}
             </button>
             <button
               type="button"

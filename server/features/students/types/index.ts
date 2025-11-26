@@ -1,12 +1,8 @@
-export interface StudentDocument {
-  _id: any;
-  name: string;
-  email: string;
-  age: number;
-  address: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { DocumentType } from "@typegoose/typegoose";
+import { Student } from "../models/Student";
+
+// Use Typegoose's DocumentType for better type safety
+export type StudentDocument = DocumentType<Student>;
 
 export interface StudentParent {
   _id?: string | { toString: () => string };
@@ -15,6 +11,7 @@ export interface StudentParent {
   email?: string;
   age?: number;
   address?: string;
+  photo?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -24,6 +21,7 @@ export interface NewStudentInput {
   email?: string | null;
   age?: number | null;
   address?: string | null;
+  photo?: string | null;
 }
 
 export interface SearchStudentInput {

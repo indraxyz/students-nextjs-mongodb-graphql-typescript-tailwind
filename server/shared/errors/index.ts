@@ -30,3 +30,9 @@ export class DatabaseError extends AppError {
     super(message, "DATABASE_ERROR", 500);
   }
 }
+
+export class MongoDBConnectionError extends AppError {
+  constructor(message: string = "Cannot connect to MongoDB. If you're using MongoDB Atlas M0 (free tier), the cluster may be paused after 30 days of inactivity. Please wait 10-30 seconds for it to wake up, then try again.", public originalError?: unknown) {
+    super(message, "MONGODB_CONNECTION_ERROR", 503); // 503 Service Unavailable
+  }
+}

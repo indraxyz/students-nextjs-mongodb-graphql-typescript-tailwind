@@ -8,6 +8,7 @@ export const CREATE_STUDENT = gql`
       email
       age
       address
+      photo
       createdAt
       updatedAt
     }
@@ -22,6 +23,7 @@ export const UPDATE_STUDENT = gql`
       email
       age
       address
+      photo
       createdAt
       updatedAt
     }

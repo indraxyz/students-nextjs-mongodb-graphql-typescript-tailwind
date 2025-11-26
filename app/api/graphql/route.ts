@@ -1,18 +1,17 @@
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { ApolloServer } from "@apollo/server";
 import { NextRequest } from "next/server";
-import { gql } from "graphql-tag";
-import { Collection } from "mongodb";
 import { connectDB } from "@/server/shared/database/connectDB";
 import { formatGraphQLError } from "@/server/shared/graphql/formatError";
 import { ApolloContext } from "@/server/shared/graphql/types";
 import Students from "@/server/features/students/datasources/Students";
-import Student from "@/server/features/students/models/Student";
+import { StudentModel } from "@/server/features/students/models/Student";
 import { studentResolvers } from "@/server/features/students/resolvers";
 import { studentTypeDefs } from "@/server/features/students/schemas/graphql";
+import { Model } from "mongoose";
 import { StudentDocument } from "@/server/features/students/types";
 
-const baseTypeDefs = gql`
+const baseTypeDefs = `
   type Query {
     _empty: String
   }
@@ -34,7 +33,7 @@ const handler = startServerAndCreateNextHandler(server, {
     return {
       dataSources: {
         students: new Students({
-          modelOrCollection: Student as unknown as Collection<StudentDocument>,
+          modelOrCollection: StudentModel as unknown as Model<StudentDocument>,
         }),
       },
     };

@@ -4,6 +4,7 @@ export interface Student {
   email: string;
   age: number;
   address: string;
+  photo?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -13,6 +14,7 @@ export interface StudentFormData {
   email: string;
   age: number;
   address: string;
+  photo?: string;
 }
 
 export interface StudentFormErrors {
@@ -20,6 +22,7 @@ export interface StudentFormErrors {
   email?: string;
   age?: string;
   address?: string;
+  photo?: string;
 }
 
 export interface UseStudentFormProps {

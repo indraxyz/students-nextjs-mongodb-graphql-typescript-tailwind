@@ -22,13 +22,13 @@ export const formatDateTime = (
 
     if (isNaN(date.getTime())) {
       console.warn("Invalid date string:", dateString);
-      return "Tanggal tidak valid";
+      return "Invalid date";
     }
 
     return format(date, "dd MMM yyyy, HH:mm");
   } catch (error) {
     console.error("Error parsing date:", dateString, error);
-    return "Error parsing tanggal";
+    return "Error parsing date";
   }
 };
 
@@ -38,13 +38,13 @@ export const formatDate = (dateString: string | undefined | null): string => {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return "Tanggal tidak valid";
+      return "Invalid date";
     }
 
     return format(date, "dd MMM yyyy");
   } catch (error) {
     console.error("Error parsing date:", dateString, error);
-    return "Error parsing tanggal";
+    return "Error parsing date";
   }
 };
 
@@ -54,13 +54,13 @@ export const formatTime = (dateString: string | undefined | null): string => {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return "Waktu tidak valid";
+      return "Invalid time";
     }
 
     return format(date, "HH:mm");
   } catch (error) {
     console.error("Error parsing time:", dateString, error);
-    return "Error parsing waktu";
+    return "Error parsing time";
   }
 };
 
@@ -72,29 +72,29 @@ export const getRelativeTime = (
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return "Tanggal tidak valid";
+      return "Invalid date";
     }
 
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return "Baru saja";
+      return "Just now";
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} menit yang lalu`;
+      return `${minutes} minutes ago`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} jam yang lalu`;
+      return `${hours} hours ago`;
     } else if (diffInSeconds < 2592000) {
       const days = Math.floor(diffInSeconds / 86400);
-      return `${days} hari yang lalu`;
+      return `${days} days ago`;
     } else {
       return formatDate(dateString);
     }
   } catch (error) {
     console.error("Error parsing relative time:", dateString, error);
-    return "Error parsing waktu";
+    return "Error parsing relative time";
   }
 };
 

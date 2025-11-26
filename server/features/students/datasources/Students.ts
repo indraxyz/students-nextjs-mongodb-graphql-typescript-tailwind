@@ -1,5 +1,5 @@
 import { MongoDataSource } from "apollo-datasource-mongodb";
-import Student from "../models/Student";
+import { StudentModel as Student } from "../models/Student";
 import { StudentDocument } from "../types";
 import { StudentInput, SearchStudentInput } from "../schemas/validation";
 import { DatabaseError, NotFoundError } from "@/server/shared/errors";

@@ -1,12 +1,11 @@
-import { gql } from "graphql-tag";
-
-export const studentTypeDefs = gql`
+export const studentTypeDefs = `
   type Student {
     id: ID!
     name: String
     email: String
     age: Int
     address: String
+    photo: String
     createdAt: String!
     updatedAt: String!
   }
@@ -16,6 +15,7 @@ export const studentTypeDefs = gql`
     email: String
     age: Int
     address: String
+    photo: String
   }
   input SearchStudentInput {
     searchTerm: String

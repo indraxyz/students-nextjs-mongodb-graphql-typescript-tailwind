@@ -106,30 +106,79 @@ function HomePageContent() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
+            //  same on table loading state
+            <span className="flex items-center justify-center gap-2 text-blue-600">
+              <span className="size-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+            </span>
           ) : error ? (
             <div className="text-center py-12">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-                <svg
-                  className="w-12 h-12 text-red-500 mx-auto mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-                <p className="text-red-700 font-medium">Failed to load data</p>
-                <p className="text-red-600 text-sm mt-2">
-                  Make sure the GraphQL server is running
-                </p>
-              </div>
+              {(() => {
+                const errorMessage = error?.message || "";
+                const isMongoError =
+                  errorMessage.includes("Cannot connect to MongoDB") ||
+                  errorMessage.includes("MongoDB Atlas") ||
+                  errorMessage.includes("MONGODB_CONNECTION_ERROR");
+
+                return (
+                  <div
+                    className={`border rounded-lg p-6 max-w-md mx-auto ${
+                      isMongoError
+                        ? "bg-yellow-50 border-yellow-200"
+                        : "bg-red-50 border-red-200"
+                    }`}
+                  >
+                    <svg
+                      className={`w-12 h-12 mx-auto mb-4 ${
+                        isMongoError ? "text-yellow-500" : "text-red-500"
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d={
+                          isMongoError
+                            ? "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            : "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        }
+                      />
+                    </svg>
+                    <p
+                      className={`font-medium ${
+                        isMongoError ? "text-yellow-700" : "text-red-700"
+                      }`}
+                    >
+                      {isMongoError
+                        ? "Cannot Connect to MongoDB"
+                        : "Failed to load data"}
+                    </p>
+                    <p
+                      className={`text-sm mt-2 ${
+                        isMongoError ? "text-yellow-600" : "text-red-600"
+                      }`}
+                    >
+                      {isMongoError
+                        ? "If you're using MongoDB Atlas M0 (free tier), the cluster may be paused after 30 days of inactivity. Please wait 10-30 seconds for it to wake up, then refresh the page."
+                        : "Make sure the GraphQL server is running"}
+                    </p>
+                    {isMongoError && (
+                      <div className="mt-4 rounded-lg bg-yellow-100 border border-yellow-300 p-3 text-left">
+                        <p className="text-xs font-medium text-yellow-800 mb-1">
+                          💡 MongoDB Atlas M0 clusters pause after 30 days of
+                          inactivity
+                        </p>
+                        <p className="text-xs text-yellow-700">
+                          The system is automatically waiting for the cluster to
+                          wake up. This usually takes 10-30 seconds.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <>
