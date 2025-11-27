@@ -122,4 +122,20 @@ export default class Students extends MongoDataSource<StudentDocument> {
       throw new DatabaseError("Failed to delete student", error);
     }
   }
+
+  async deleteStudents({ ids }: { ids: string[] }): Promise<number> {
+    try {
+      if (!ids || ids.length === 0) {
+        throw new Error("Student IDs are required");
+      }
+
+      const result = await Student.deleteMany({
+        _id: { $in: ids },
+      });
+
+      return result.deletedCount || 0;
+    } catch (error) {
+      throw new DatabaseError("Failed to delete students", error);
+    }
+  }
 }

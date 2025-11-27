@@ -5,6 +5,7 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -14,6 +15,7 @@ function validateEnv(): Env {
     return envSchema.parse({
       MONGODB_URI: process.env.MONGODB_URI,
       NODE_ENV: process.env.NODE_ENV,
+      BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

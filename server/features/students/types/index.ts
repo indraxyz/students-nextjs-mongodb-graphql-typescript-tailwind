@@ -52,3 +52,7 @@ export interface UpdateStudentArgs {
 export interface DeleteStudentArgs {
   id: string;
 }
+
+export interface DeleteStudentsArgs {
+  ids: string[];
+}

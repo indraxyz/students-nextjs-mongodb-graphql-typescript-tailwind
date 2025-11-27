@@ -4,7 +4,15 @@ import {
   formatDate,
   getRelativeTime,
 } from "@/app/src/shared/utils";
-import { Mail, MapPin, Calendar, Edit, Trash2, User } from "lucide-react";
+import {
+  Mail,
+  MapPin,
+  Calendar,
+  Edit,
+  Trash2,
+  User,
+  Check,
+} from "lucide-react";
 
 export interface StudentCardProps {
   student: Student;
@@ -12,6 +20,9 @@ export interface StudentCardProps {
   onDeleteRequest?: (id: string, name?: string | null) => void;
   disabled?: boolean;
   showActions?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string, selected: boolean) => void;
+  showCheckbox?: boolean;
 }
 
 export function StudentCard({
@@ -20,9 +31,41 @@ export function StudentCard({
   onDeleteRequest,
   disabled = false,
   showActions = true,
+  isSelected = false,
+  onSelect,
+  showCheckbox = false,
 }: StudentCardProps) {
+  const handleSelect = () => {
+    if (onSelect && !disabled) {
+      onSelect(student.id, !isSelected);
+    }
+  };
+
   return (
-    <article className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 focus-within:ring-2 focus-within:ring-blue-500">
+    <article
+      onClick={showCheckbox ? handleSelect : undefined}
+      className={`group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 focus-within:ring-2 focus-within:ring-blue-500 ${
+        isSelected ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200"
+      } ${showCheckbox ? "cursor-pointer" : ""}`}
+    >
+      {/* Selection Checkbox */}
+      {showCheckbox && (
+        <div className="absolute left-3 top-3 z-10">
+          <button
+            onClick={handleSelect}
+            disabled={disabled}
+            className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all ${
+              isSelected
+                ? "border-blue-600 bg-blue-600 text-white"
+                : "border-gray-300 bg-white hover:border-blue-400"
+            } disabled:cursor-not-allowed disabled:opacity-50`}
+            aria-label={isSelected ? "Deselect student" : "Select student"}
+          >
+            {isSelected && <Check className="h-4 w-4" />}
+          </button>
+        </div>
+      )}
+
       {/* Photo Section - Full Width at Top */}
       <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50">
         {student.photo ? (

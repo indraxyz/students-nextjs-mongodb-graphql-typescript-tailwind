@@ -6,9 +6,12 @@ export interface ToastState {
 }
 
 export interface ConfirmDeleteState {
-  id: string;
-  name: string;
+  id?: string;
+  ids?: string[];
+  name?: string;
+  count?: number;
   isProcessing: boolean;
+  isBulk?: boolean;
 }
 
 export interface PageHeaderProps {

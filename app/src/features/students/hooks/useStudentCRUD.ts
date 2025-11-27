@@ -4,6 +4,7 @@ import {
   CREATE_STUDENT,
   UPDATE_STUDENT,
   DELETE_STUDENT,
+  DELETE_STUDENTS,
 } from "../graphql/mutations";
 import {
   Student,
@@ -52,10 +53,22 @@ export function useStudentCRUD({
     );
   const [deleteStudent, { loading: deleting, error: deleteError }] =
     useMutation<DeleteStudentResponse, { id: string }>(DELETE_STUDENT);
+  const [
+    deleteStudents,
+    { loading: deletingMultiple, error: deleteMultipleError },
+  ] = useMutation<{ deleteStudents: number }, { ids: string[] }>(
+    DELETE_STUDENTS
+  );
 
   const students = studentsData?.students || [];
-  const isLoading = queryLoading || creating || updating || deleting;
-  const error = queryError || createError || updateError || deleteError;
+  const isLoading =
+    queryLoading || creating || updating || deleting || deletingMultiple;
+  const error =
+    queryError ||
+    createError ||
+    updateError ||
+    deleteError ||
+    deleteMultipleError;
 
   const createStudentHandler = async (
     input: StudentFormData
@@ -156,6 +169,24 @@ export function useStudentCRUD({
     }
   };
 
+  const deleteStudentsHandler = async (ids: string[]): Promise<number> => {
+    try {
+      const result = await deleteStudents({
+        variables: { ids },
+      });
+
+      if (result.data?.deleteStudents !== undefined) {
+        await refetch();
+        return result.data.deleteStudents;
+      }
+
+      throw new Error("Failed to delete students");
+    } catch (error) {
+      console.error("Error deleting students:", error);
+      throw error;
+    }
+  };
+
   const confirmDelete = async (id: string, name: string): Promise<boolean> => {
     if (confirm(`Yakin ingin menghapus ${name}?`)) {
       try {
@@ -177,9 +208,11 @@ export function useStudentCRUD({
     creating,
     updating,
     deleting,
+    deletingMultiple,
     createStudent: createStudentHandler,
     updateStudent: updateStudentHandler,
     deleteStudent: deleteStudentHandler,
+    deleteStudents: deleteStudentsHandler,
     confirmDelete,
     refetch,
   };

@@ -11,15 +11,17 @@ export interface FormFieldProps {
 export function FormField({ label, required, error, render }: FormFieldProps) {
   const fieldId = useId();
   return (
-    <div>
+    <div className="space-y-2">
       <label
         htmlFor={fieldId}
-        className="mb-1 block text-sm font-medium text-gray-700"
+        className="block text-sm font-semibold text-gray-900"
       >
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {render(fieldId)}
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600 font-medium">{error}</p>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Student } from "../types/student";
+import { Trash2, Check } from "lucide-react";
 import {
   useStudentForm,
   useStudentCRUD,
@@ -44,6 +45,47 @@ export default function StudentManagementAdvanced() {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDeleteState, setConfirmDeleteState] =
     useState<ConfirmDeleteState | null>(null);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Create a stable string of student IDs for dependency comparison
+  const filteredStudentIds = useMemo(
+    () =>
+      search.filteredStudents
+        .map((s) => s.id)
+        .filter(Boolean)
+        .sort()
+        .join(","),
+    [search.filteredStudents]
+  );
+
+  // Clear selection when students list changes (e.g., after delete, search, etc.)
+  useEffect(() => {
+    // Only keep selected students that still exist in the filtered list
+    const filteredIds = new Set(filteredStudentIds.split(",").filter(Boolean));
+
+    setSelectedStudents((prev) => {
+      // Check if any selected student is no longer in the filtered list
+      let needsUpdate = false;
+      const newSet = new Set<string>();
+
+      prev.forEach((id) => {
+        if (filteredIds.has(id)) {
+          newSet.add(id);
+        } else {
+          needsUpdate = true;
+        }
+      });
+
+      // Only update if there's a change
+      if (!needsUpdate && newSet.size === prev.size) {
+        return prev; // Return same reference to prevent re-render
+      }
+
+      return newSet;
+    });
+  }, [filteredStudentIds]);
 
   const showToast = useCallback(
     (message: string, status: ToastStatus = "success") => {
@@ -209,12 +251,14 @@ export default function StudentManagementAdvanced() {
 
   const handleCreate = useCallback(() => {
     setFormError(null);
+    setSelectedStudents(new Set());
     ui.showCreateForm();
   }, [ui]);
 
   const handleEdit = useCallback(
     (student: Student) => {
       setFormError(null);
+      setSelectedStudents(new Set());
       ui.handleEdit(student);
     },
     [ui]
@@ -232,6 +276,43 @@ export default function StudentManagementAdvanced() {
     setConfirmDeleteState(null);
   }, []);
 
+  const requestBulkDelete = useCallback(() => {
+    if (selectedStudents.size === 0) return;
+    setConfirmDeleteState({
+      ids: Array.from(selectedStudents),
+      count: selectedStudents.size,
+      isProcessing: false,
+      isBulk: true,
+    });
+  }, [selectedStudents]);
+
+  const handleSelectStudent = useCallback((id: string, selected: boolean) => {
+    setSelectedStudents((prev) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedStudents.size === search.filteredStudents.length) {
+      setSelectedStudents(new Set());
+    } else {
+      const allIds = new Set(
+        search.filteredStudents.map((s) => s.id).filter(Boolean) as string[]
+      );
+      setSelectedStudents(allIds);
+    }
+  }, [selectedStudents.size, search.filteredStudents]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedStudents(new Set());
+  }, []);
+
   const handleConfirmDelete = useCallback(async () => {
     if (!confirmDeleteState) return;
     setConfirmDeleteState((prev) =>
@@ -239,8 +320,14 @@ export default function StudentManagementAdvanced() {
     );
 
     try {
-      await crud.deleteStudent(confirmDeleteState.id);
-      showToast(`Student ${confirmDeleteState.name} deleted successfully`);
+      if (confirmDeleteState.isBulk && confirmDeleteState.ids) {
+        const deletedCount = await crud.deleteStudents(confirmDeleteState.ids);
+        showToast(`Successfully deleted ${deletedCount} student(s)`);
+        setSelectedStudents(new Set());
+      } else if (confirmDeleteState.id) {
+        await crud.deleteStudent(confirmDeleteState.id);
+        showToast(`Student ${confirmDeleteState.name} deleted successfully`);
+      }
     } catch (error) {
       const message = parseErrorMessage(error);
       showToast(message, "error");
@@ -297,20 +384,77 @@ export default function StudentManagementAdvanced() {
         <StatsBar stats={search.searchStats} isLoading={isAnyLoading} />
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedStudents.size > 0 && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedStudents.size} student(s) selected
+            </span>
+            <button
+              onClick={handleClearSelection}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+              disabled={isAnyLoading}
+            >
+              Clear selection
+            </button>
+          </div>
+          <button
+            onClick={requestBulkDelete}
+            disabled={isAnyLoading}
+            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected ({selectedStudents.size})
+          </button>
+        </div>
+      )}
+
       {hasStudents ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {search.filteredStudents.map((student) => {
-            if (!student?.id) return null;
-            return (
-              <StudentCard
-                key={student.id}
-                student={student}
-                disabled={isAnyLoading}
-                onEdit={handleEdit}
-                onDeleteRequest={requestDelete}
-              />
-            );
-          })}
+        <div className="space-y-4">
+          {/* Select All Checkbox */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSelectAll}
+              disabled={isAnyLoading}
+              className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                selectedStudents.size === search.filteredStudents.length &&
+                search.filteredStudents.length > 0
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-gray-300 bg-white hover:border-blue-400"
+              } disabled:cursor-not-allowed disabled:opacity-50`}
+              aria-label="Select all students"
+            >
+              {selectedStudents.size === search.filteredStudents.length &&
+                search.filteredStudents.length > 0 && (
+                  <Check className="h-3 w-3" />
+                )}
+            </button>
+            <span className="text-sm text-gray-600">
+              {selectedStudents.size === search.filteredStudents.length &&
+              search.filteredStudents.length > 0
+                ? "Deselect all"
+                : "Select all"}
+            </span>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {search.filteredStudents.map((student) => {
+              if (!student?.id) return null;
+              return (
+                <StudentCard
+                  key={student.id}
+                  student={student}
+                  disabled={isAnyLoading}
+                  onEdit={handleEdit}
+                  onDeleteRequest={requestDelete}
+                  isSelected={selectedStudents.has(student.id)}
+                  onSelect={handleSelectStudent}
+                  showCheckbox={true}
+                />
+              );
+            })}
+          </div>
         </div>
       ) : (
         <EmptyState
@@ -340,6 +484,8 @@ export default function StudentManagementAdvanced() {
       {confirmDeleteState && (
         <ConfirmDialog
           studentName={confirmDeleteState.name}
+          count={confirmDeleteState.count}
+          isBulk={confirmDeleteState.isBulk}
           isProcessing={confirmDeleteState.isProcessing}
           onCancel={closeConfirmDialog}
           onConfirm={handleConfirmDelete}

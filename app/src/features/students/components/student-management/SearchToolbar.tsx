@@ -35,7 +35,7 @@ export function SearchToolbar({
           placeholder="Search name, email, address, or age..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-300"
         />
       </div>
       <div className="flex gap-2">
@@ -47,7 +47,7 @@ export function SearchToolbar({
             id={sortSelectId}
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as keyof Student)}
-            className="rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-300 cursor-pointer"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -59,7 +59,7 @@ export function SearchToolbar({
         <button
           type="button"
           onClick={onToggleSortOrder}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-200 active:scale-95"
           title={`Sort by ${
             sortOrder === "asc" ? "ascending (A-Z)" : "descending (Z-A)"
           }`}

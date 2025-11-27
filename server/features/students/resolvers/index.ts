@@ -2,6 +2,7 @@ import { formatISO } from "date-fns";
 import { unlink, writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { put, del } from "@vercel/blob";
 import {
   StudentParent,
   QueryArgs,
@@ -9,6 +10,7 @@ import {
   CreateStudentArgs,
   UpdateStudentArgs,
   DeleteStudentArgs,
+  DeleteStudentsArgs,
 } from "../types";
 import {
   studentInputSchema,
@@ -21,6 +23,7 @@ import {
 } from "@/server/shared/errors";
 import type { ApolloContext } from "@/server/shared/graphql/types";
 import { ZodError } from "zod";
+import { env } from "@/server/shared/config/env";
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -33,7 +36,38 @@ async function ensureUploadDir() {
   }
 }
 
-// Helper function to save base64 photo to disk
+// Helper function to delete photo (handles both local files and Vercel Blob URLs)
+async function deletePhoto(
+  photoPath: string | null | undefined
+): Promise<void> {
+  if (!photoPath) return;
+
+  try {
+    // Check if it's a Vercel Blob URL
+    if (
+      photoPath.startsWith("https://") &&
+      photoPath.includes("blob.vercel-storage.com")
+    ) {
+      // Delete from Vercel Blob
+      if (env.BLOB_READ_WRITE_TOKEN) {
+        await del(photoPath, { token: env.BLOB_READ_WRITE_TOKEN });
+        console.log("Photo deleted from Vercel Blob:", photoPath);
+      }
+    } else if (photoPath.startsWith("/uploads/students/")) {
+      // Delete local file
+      const oldPhotoFullPath = join(process.cwd(), "public", photoPath);
+      if (existsSync(oldPhotoFullPath)) {
+        await unlink(oldPhotoFullPath);
+        console.log("Photo deleted from local storage:", photoPath);
+      }
+    }
+  } catch (error) {
+    console.error("Error deleting photo:", error);
+    // Continue even if deletion fails
+  }
+}
+
+// Helper function to save base64 photo to disk or Vercel Blob
 async function saveBase64Photo(
   base64Data: string,
   studentId: string,
@@ -73,8 +107,6 @@ async function saveBase64Photo(
       throw new ValidationError("File size exceeds 1MB limit.");
     }
 
-    await ensureUploadDir();
-
     // Generate filename: id_time_studentName.extension
     const timestamp = Date.now();
     const sanitizedName = studentName
@@ -82,29 +114,44 @@ async function saveBase64Photo(
       .toLowerCase()
       .substring(0, 50);
     const extension = mimeType === "jpeg" ? "jpg" : mimeType;
-    const filename = `${studentId}_${timestamp}_${sanitizedName}.${extension}`;
-    const filepath = join(UPLOAD_DIR, filename);
+    const filename = `students/${studentId}_${timestamp}_${sanitizedName}.${extension}`;
+
+    // Check if running on Vercel or if BLOB_READ_WRITE_TOKEN is available
+    const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+    const useBlobStorage = isVercel || env.BLOB_READ_WRITE_TOKEN;
 
     // Delete old photo if provided
     if (oldPhotoPath) {
+      await deletePhoto(oldPhotoPath);
+    }
+
+    if (useBlobStorage && env.BLOB_READ_WRITE_TOKEN) {
+      // Use Vercel Blob Storage
       try {
-        const oldPhotoFullPath = join(process.cwd(), "public", oldPhotoPath);
-        if (existsSync(oldPhotoFullPath)) {
-          await unlink(oldPhotoFullPath);
-        }
-      } catch (error) {
-        console.error("Error deleting old photo:", error);
-        // Continue even if deletion fails
+        const blob = await put(filename, buffer, {
+          access: "public",
+          contentType: `image/${mimeType}`,
+          token: env.BLOB_READ_WRITE_TOKEN,
+        });
+
+        console.log("Photo saved to Vercel Blob:", blob.url);
+        return blob.url;
+      } catch (blobError) {
+        console.error(
+          "Error uploading to Vercel Blob, falling back to local:",
+          blobError
+        );
+        // Fall through to local storage if blob upload fails
       }
     }
 
-    // Save file
+    // Use local file system (development or fallback)
+    await ensureUploadDir();
+    const filepath = join(UPLOAD_DIR, filename.replace("students/", ""));
     await writeFile(filepath, buffer);
 
-    console.log("Photo saved successfully:", filename);
-
-    // Return the filename (relative path from public)
-    return `/uploads/students/${filename}`;
+    console.log("Photo saved to local storage:", filename);
+    return `/uploads/students/${filename.replace("students/", "")}`;
   } catch (error) {
     console.error("Error saving photo:", error);
     if (error instanceof ValidationError) {
@@ -490,26 +537,16 @@ export const studentResolvers = {
           }"`
         );
 
-        // Delete photo file if exists
+        // Delete photo file if exists (handles both local and Vercel Blob)
         if (student.photo) {
           try {
             console.log(
               `📸 Mutation: deleteStudent - Deleting photo: ${student.photo}`
             );
-            // Ensure the path is within the uploads directory for security
-            if (student.photo.startsWith("/uploads/students/")) {
-              const photoPath = join(process.cwd(), "public", student.photo);
-              if (existsSync(photoPath)) {
-                await unlink(photoPath);
-                console.log(
-                  `✅ Mutation: deleteStudent - Photo deleted: ${student.photo}`
-                );
-              } else {
-                console.log(
-                  `⚠️ Mutation: deleteStudent - Photo file not found: ${student.photo}`
-                );
-              }
-            }
+            await deletePhoto(student.photo);
+            console.log(
+              `✅ Mutation: deleteStudent - Photo deleted: ${student.photo}`
+            );
           } catch (error) {
             console.warn(
               "⚠️ Mutation: deleteStudent - Error deleting photo file:",
@@ -538,6 +575,74 @@ export const studentResolvers = {
           throw error;
         }
         throw new DatabaseError("Failed to delete student", error);
+      }
+    },
+    deleteStudents: async (
+      _: unknown,
+      args: DeleteStudentsArgs,
+      context: ApolloContext
+    ) => {
+      try {
+        console.log("🗑️ Mutation: deleteStudents - IDs:", args.ids);
+
+        if (!args.ids || args.ids.length === 0) {
+          throw new ValidationError("At least one student ID is required");
+        }
+
+        // Get all students to delete their photos
+        const studentsToDelete = await Promise.all(
+          args.ids.map((id) => context.dataSources.students.getStudent({ id }))
+        );
+
+        const validStudents = studentsToDelete.filter(
+          (student): student is NonNullable<typeof student> => student !== null
+        ) as StudentParent[];
+
+        console.log(
+          `📋 Mutation: deleteStudents - Found ${validStudents.length} student(s) to delete`
+        );
+
+        // Delete all photos
+        for (const student of validStudents) {
+          if (student && student.photo) {
+            try {
+              const studentId =
+                student._id?.toString() || student.id || "unknown";
+              console.log(
+                `📸 Mutation: deleteStudents - Deleting photo: ${student.photo}`
+              );
+              await deletePhoto(student.photo);
+            } catch (error) {
+              const studentId =
+                student._id?.toString() || student.id || "unknown";
+              console.warn(
+                `⚠️ Mutation: deleteStudents - Error deleting photo for student ${studentId}:`,
+                error
+              );
+              // Continue even if photo deletion fails
+            }
+          }
+        }
+
+        // Delete students from database
+        const deletedCount = await context.dataSources.students.deleteStudents({
+          ids: args.ids,
+        });
+
+        console.log(
+          `✅ Mutation: deleteStudents - Success: Deleted ${deletedCount} student(s)`
+        );
+
+        return deletedCount;
+      } catch (error) {
+        console.error("❌ Mutation: deleteStudents - Error:", error);
+        if (
+          error instanceof NotFoundError ||
+          error instanceof ValidationError
+        ) {
+          throw error;
+        }
+        throw new DatabaseError("Failed to delete students", error);
       }
     },
   },

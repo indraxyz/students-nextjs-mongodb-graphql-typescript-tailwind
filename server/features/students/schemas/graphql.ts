@@ -33,5 +33,6 @@ export const studentTypeDefs = `
     createStudent(input: NewStudentInput!): Student
     updateStudent(id: ID!, input: NewStudentInput!): Student
     deleteStudent(id: ID!): String
+    deleteStudents(ids: [ID!]!): Int
   }
 `;
