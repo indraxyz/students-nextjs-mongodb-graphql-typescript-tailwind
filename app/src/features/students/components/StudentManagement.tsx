@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Student } from "../types/student";
-import { Trash2, Check } from "lucide-react";
+import { Trash2, CheckSquare, X } from "lucide-react";
 import {
   useStudentForm,
   useStudentCRUD,
@@ -12,21 +13,18 @@ import {
 import {
   PageHeader,
   SearchToolbar,
-  StatsBar,
   StudentFormModal,
   StudentCard,
   EmptyState,
-  ToastBanner,
   ConfirmDialog,
   StateOverlay,
-  type ToastStatus,
-  type ToastState,
   type ConfirmDeleteState,
 } from "./student-management";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-/**
- * Student management UI with enhanced UX, accessibility, and DX ergonomics.
- */
 export default function StudentManagementAdvanced() {
   const ui = useStudentUI();
   const crud = useStudentCRUD({
@@ -40,8 +38,6 @@ export default function StudentManagementAdvanced() {
     students: crud.students,
   });
 
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDeleteState, setConfirmDeleteState] =
     useState<ConfirmDeleteState | null>(null);
@@ -49,7 +45,6 @@ export default function StudentManagementAdvanced() {
     new Set()
   );
 
-  // Create a stable string of student IDs for dependency comparison
   const filteredStudentIds = useMemo(
     () =>
       search.filteredStudents
@@ -60,13 +55,10 @@ export default function StudentManagementAdvanced() {
     [search.filteredStudents]
   );
 
-  // Clear selection when students list changes (e.g., after delete, search, etc.)
   useEffect(() => {
-    // Only keep selected students that still exist in the filtered list
     const filteredIds = new Set(filteredStudentIds.split(",").filter(Boolean));
 
     setSelectedStudents((prev) => {
-      // Check if any selected student is no longer in the filtered list
       let needsUpdate = false;
       const newSet = new Set<string>();
 
@@ -78,74 +70,48 @@ export default function StudentManagementAdvanced() {
         }
       });
 
-      // Only update if there's a change
       if (!needsUpdate && newSet.size === prev.size) {
-        return prev; // Return same reference to prevent re-render
+        return prev;
       }
 
       return newSet;
     });
   }, [filteredStudentIds]);
 
-  const showToast = useCallback(
-    (message: string, status: ToastStatus = "success") => {
-      setToast({ message, status });
-    },
-    []
-  );
-
-  const dismissToast = useCallback(() => {
-    setToast(null);
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    toastTimeoutRef.current = setTimeout(() => {
-      dismissToast();
-    }, 4000);
-  }, [toast, dismissToast]);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-    };
-  }, []);
-
   const isMongoConnectionError = useCallback((error: unknown): boolean => {
     if (!error || typeof error !== "object") return false;
 
-    // Check GraphQL error extensions
     if (
       "graphQLErrors" in error &&
-      Array.isArray((error as any).graphQLErrors)
+      Array.isArray((error as Record<string, unknown>).graphQLErrors)
     ) {
-      const graphQLErrors = (error as any).graphQLErrors;
+      const graphQLErrors = (error as Record<string, unknown>)
+        .graphQLErrors as Array<Record<string, unknown>>;
       return graphQLErrors.some(
-        (err: any) =>
-          err?.extensions?.code === "MONGODB_CONNECTION_ERROR" ||
-          err?.message?.includes("Cannot connect to MongoDB") ||
-          err?.message?.includes("MongoDB Atlas")
+        (err) =>
+          (err?.extensions as Record<string, unknown>)?.code ===
+            "MONGODB_CONNECTION_ERROR" ||
+          (err?.message as string)?.includes("Cannot connect to MongoDB") ||
+          (err?.message as string)?.includes("MongoDB Atlas")
       );
     }
 
-    // Check network error
     if ("networkError" in error) {
-      const networkError = (error as any).networkError;
-      if (networkError?.result?.errors) {
-        return networkError.result.errors.some(
-          (err: any) =>
-            err?.extensions?.code === "MONGODB_CONNECTION_ERROR" ||
-            err?.message?.includes("Cannot connect to MongoDB")
-        );
+      const networkError = (error as Record<string, unknown>)
+        .networkError as Record<string, unknown>;
+      if (networkError?.result) {
+        const result = networkError.result as { errors?: Array<Record<string, unknown>> };
+        if (result.errors) {
+          return result.errors.some(
+            (err) =>
+              (err?.extensions as Record<string, unknown>)?.code ===
+                "MONGODB_CONNECTION_ERROR" ||
+              (err?.message as string)?.includes("Cannot connect to MongoDB")
+          );
+        }
       }
     }
 
-    // Check error message directly
     const errorMessage = error instanceof Error ? error.message : String(error);
     return (
       errorMessage.includes("Cannot connect to MongoDB") ||
@@ -176,55 +142,55 @@ export default function StudentManagementAdvanced() {
       try {
         if (ui.isEditing && ui.editingStudent) {
           await crud.updateStudent(ui.editingStudent.id, data);
-          showToast("Student updated successfully");
+          toast.success("Student updated successfully");
         } else {
           await crud.createStudent(data);
-          showToast("Student created successfully");
+          toast.success("Student created successfully");
         }
         ui.hideForm();
       } catch (error) {
         const message = parseErrorMessage(error);
         setFormError(message);
-        showToast(message, "error");
+        toast.error(message);
 
-        // Extract field-specific errors from GraphQL error
         if (error && typeof error === "object") {
-          // Check for GraphQL errors with field information
           if (
             "graphQLErrors" in error &&
-            Array.isArray((error as any).graphQLErrors)
+            Array.isArray((error as Record<string, unknown>).graphQLErrors)
           ) {
-            const graphQLErrors = (error as any).graphQLErrors;
+            const graphQLErrors = (error as Record<string, unknown>)
+              .graphQLErrors as Array<Record<string, unknown>>;
             const fieldErrors: Record<string, string> = {};
 
-            graphQLErrors.forEach((err: any) => {
-              // Check if error has field information in extensions
+            graphQLErrors.forEach((err) => {
+              const extensions = err?.extensions as Record<string, unknown>;
               if (
-                err?.extensions?.fields &&
-                typeof err.extensions.fields === "object"
+                extensions?.fields &&
+                typeof extensions.fields === "object"
               ) {
-                Object.assign(fieldErrors, err.extensions.fields);
+                Object.assign(fieldErrors, extensions.fields);
               }
             });
 
-            // Set field errors if any were found
             if (Object.keys(fieldErrors).length > 0) {
               form.setFieldErrors(fieldErrors);
             }
           }
 
-          // Check network error for field information
           if ("networkError" in error) {
-            const networkError = (error as any).networkError;
-            if (networkError?.result?.errors) {
+            const networkError = (error as Record<string, unknown>)
+              .networkError as Record<string, unknown>;
+            const result = networkError?.result as { errors?: Array<Record<string, unknown>> };
+            if (result?.errors) {
               const fieldErrors: Record<string, string> = {};
 
-              networkError.result.errors.forEach((err: any) => {
+              result.errors.forEach((err) => {
+                const extensions = err?.extensions as Record<string, unknown>;
                 if (
-                  err?.extensions?.fields &&
-                  typeof err.extensions.fields === "object"
+                  extensions?.fields &&
+                  typeof extensions.fields === "object"
                 ) {
-                  Object.assign(fieldErrors, err.extensions.fields);
+                  Object.assign(fieldErrors, extensions.fields);
                 }
               });
 
@@ -322,29 +288,19 @@ export default function StudentManagementAdvanced() {
     try {
       if (confirmDeleteState.isBulk && confirmDeleteState.ids) {
         const deletedCount = await crud.deleteStudents(confirmDeleteState.ids);
-        showToast(`Successfully deleted ${deletedCount} student(s)`);
+        toast.success(`Successfully deleted ${deletedCount} student(s)`);
         setSelectedStudents(new Set());
       } else if (confirmDeleteState.id) {
         await crud.deleteStudent(confirmDeleteState.id);
-        showToast(`Student ${confirmDeleteState.name} deleted successfully`);
+        toast.success(`Student ${confirmDeleteState.name} deleted successfully`);
       }
     } catch (error) {
       const message = parseErrorMessage(error);
-      showToast(message, "error");
+      toast.error(message);
     } finally {
       setConfirmDeleteState(null);
     }
-  }, [confirmDeleteState, crud, parseErrorMessage, showToast]);
-
-  // if (crud.queryLoading) {
-  //   return (
-  //     <StateOverlay
-  //       variant="loading"
-  //       title="Memuat data students"
-  //       description="Mohon tunggu sebentar..."
-  //     />
-  //   );
-  // }
+  }, [confirmDeleteState, crud, parseErrorMessage]);
 
   if (crud.error) {
     const isMongoError = isMongoConnectionError(crud.error);
@@ -361,84 +317,105 @@ export default function StudentManagementAdvanced() {
   }
 
   const hasStudents = search.filteredStudents.length > 0;
+  const allSelected =
+    selectedStudents.size === search.filteredStudents.length &&
+    search.filteredStudents.length > 0;
 
   return (
-    <div className="relative max-w-6xl mx-auto p-6">
-      <PageHeader
-        stats={search.searchStats}
-        onCreate={handleCreate}
-        disabled={isAnyLoading}
-      />
+    <div className="relative mx-auto max-w-6xl p-4 md:p-6">
+      <PageHeader onCreate={handleCreate} disabled={isAnyLoading} />
 
-      <div className="mb-6 space-y-4">
+      <div className="mb-6">
         <SearchToolbar
           searchTerm={search.searchTerm}
           sortBy={search.sortBy}
           sortOrder={search.sortOrder}
           sortOptions={search.sortOptions}
+          stats={search.searchStats}
+          isLoading={isAnyLoading}
           onSearchChange={search.handleSearchChange}
           onSortChange={search.handleSortChange}
           onToggleSortOrder={search.toggleSortOrder}
         />
-
-        <StatsBar stats={search.searchStats} isLoading={isAnyLoading} />
       </div>
 
-      {/* Bulk Actions Bar */}
-      {selectedStudents.size > 0 && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-blue-900">
-              {selectedStudents.size} student(s) selected
-            </span>
-            <button
-              onClick={handleClearSelection}
-              className="text-sm text-blue-600 hover:text-blue-800 underline"
-              disabled={isAnyLoading}
-            >
-              Clear selection
-            </button>
+      {/* Selection Controls & Bulk Actions */}
+      {hasStudents && (
+        <div
+          className={cn(
+            "mb-4 rounded-lg border transition-all duration-300",
+            selectedStudents.size > 0
+              ? "border-primary/30 bg-primary/5 shadow-sm"
+              : "border-transparent bg-transparent"
+          )}
+        >
+          <div className="flex items-center justify-between p-2 sm:p-3">
+            {/* Left: Select All & Selection Count */}
+            <div className="flex items-center gap-2">
+              <div
+                onClick={handleSelectAll}
+                className={cn(
+                  "flex items-center gap-2.5 px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200",
+                  "hover:bg-muted/50",
+                  allSelected && "bg-primary/10"
+                )}
+              >
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={handleSelectAll}
+                  disabled={isAnyLoading}
+                  aria-label="Select all students"
+                  className={cn(
+                    "h-5 w-5 transition-all duration-200",
+                    "data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "text-sm transition-colors",
+                    allSelected
+                      ? "font-medium text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {allSelected ? "All selected" : "Select all"}
+                </span>
+              </div>
+
+              {/* Selection Count Badge with Clear */}
+              {selectedStudents.size > 0 && (
+                <Badge
+                  variant="secondary"
+                  onClick={handleClearSelection}
+                  className="gap-1.5 bg-primary/10 text-primary border-primary/20 pl-2.5 pr-1.5 py-1 cursor-pointer hover:bg-primary/20 transition-colors animate-in fade-in slide-in-from-left-2 duration-200"
+                >
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  <span>{selectedStudents.size} selected</span>
+                  <X className="h-3.5 w-3.5 ml-0.5 hover:text-destructive" />
+                </Badge>
+              )}
+            </div>
+
+            {/* Right: Delete Action */}
+            {selectedStudents.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={requestBulkDelete}
+                disabled={isAnyLoading}
+                className="h-8 gap-1.5 animate-in fade-in slide-in-from-right-2 duration-200"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+            )}
           </div>
-          <button
-            onClick={requestBulkDelete}
-            disabled={isAnyLoading}
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete Selected ({selectedStudents.size})
-          </button>
         </div>
       )}
 
       {hasStudents ? (
         <div className="space-y-4">
-          {/* Select All Checkbox */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSelectAll}
-              disabled={isAnyLoading}
-              className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
-                selectedStudents.size === search.filteredStudents.length &&
-                search.filteredStudents.length > 0
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-gray-300 bg-white hover:border-blue-400"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
-              aria-label="Select all students"
-            >
-              {selectedStudents.size === search.filteredStudents.length &&
-                search.filteredStudents.length > 0 && (
-                  <Check className="h-3 w-3" />
-                )}
-            </button>
-            <span className="text-sm text-gray-600">
-              {selectedStudents.size === search.filteredStudents.length &&
-              search.filteredStudents.length > 0
-                ? "Deselect all"
-                : "Select all"}
-            </span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {search.filteredStudents.map((student) => {
               if (!student?.id) return null;
               return (
@@ -478,8 +455,6 @@ export default function StudentManagementAdvanced() {
           photoPreview={form.photoPreview}
         />
       )}
-
-      {toast && <ToastBanner toast={toast} onDismiss={dismissToast} />}
 
       {confirmDeleteState && (
         <ConfirmDialog

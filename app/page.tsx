@@ -3,39 +3,54 @@
 import Link from "next/link";
 import { useStudentManagement } from "./src/features/students/hooks/useStudentManagement";
 import { StudentCard } from "./src/features/students/components/student-management/StudentCard";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  Users,
+  BarChart3,
+  UserCheck,
+  Search,
+  Settings2,
+  Zap,
+  CheckCircle2,
+  Smartphone,
+  ArrowRight,
+  Clock,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 
 function StatsCard({
   title,
   value,
   icon,
-  color,
 }: {
   title: string;
   value: number | string;
   icon: React.ReactNode;
-  color: string;
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
+    <Card className="shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-3xl font-bold text-foreground">{value}</p>
+          </div>
+          <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            {icon}
+          </div>
         </div>
-        <div
-          className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center`}
-        >
-          {icon}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function HomePageContent() {
   const { students, isLoading: loading, error } = useStudentManagement();
 
-  // Statistik dari data real
   const totalStudents = students.length;
   const averageAge =
     students.length > 0
@@ -45,7 +60,6 @@ function HomePageContent() {
         )
       : 0;
 
-  // Siswa terbaru (3 terakhir berdasarkan createdAt)
   const recentStudents = [...students]
     .sort(
       (a, b) =>
@@ -54,41 +68,28 @@ function HomePageContent() {
     .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="relative overflow-hidden bg-white shadow-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-5"></div>
+      <header className="relative overflow-hidden border-b bg-card">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10" />
         <div className="relative container mx-auto px-4 py-16 sm:py-24">
+          <div className="absolute top-4 right-4">
+            <ThemeToggle />
+          </div>
           <div className="text-center">
-            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-6">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-6">
               Students
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                GraphQL
-              </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               Manage Students data with Next.js, GraphQL and MongoDB with ease
               and efficiency using the latest technology.
             </p>
-            <Link
-              href="/src"
-              className="inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              Start Managing Students
-              <svg
-                className="ml-2 w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </Link>
+            <Button size="lg" asChild>
+              <Link href="/src" className="gap-2">
+                Start Managing Students
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </header>
@@ -97,19 +98,18 @@ function HomePageContent() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Real-time Statistics
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Statistics
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground">
               Data displayed directly from MongoDB using GraphQL
             </p>
           </div>
 
           {loading ? (
-            //  same on table loading state
-            <span className="flex items-center justify-center gap-2 text-blue-600">
-              <span className="size-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-            </span>
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
           ) : error ? (
             <div className="text-center py-12">
               {(() => {
@@ -120,63 +120,55 @@ function HomePageContent() {
                   errorMessage.includes("MONGODB_CONNECTION_ERROR");
 
                 return (
-                  <div
-                    className={`border rounded-lg p-6 max-w-md mx-auto ${
+                  <Card
+                    className={`max-w-md mx-auto ${
                       isMongoError
-                        ? "bg-yellow-50 border-yellow-200"
-                        : "bg-red-50 border-red-200"
+                        ? "border-yellow-500/50 bg-yellow-500/10"
+                        : "border-destructive/50 bg-destructive/10"
                     }`}
                   >
-                    <svg
-                      className={`w-12 h-12 mx-auto mb-4 ${
-                        isMongoError ? "text-yellow-500" : "text-red-500"
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={
+                    <CardContent className="p-6">
+                      {isMongoError ? (
+                        <Clock className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
+                      ) : (
+                        <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-destructive" />
+                      )}
+                      <p
+                        className={`font-medium ${
                           isMongoError
-                            ? "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            : "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        }
-                      />
-                    </svg>
-                    <p
-                      className={`font-medium ${
-                        isMongoError ? "text-yellow-700" : "text-red-700"
-                      }`}
-                    >
-                      {isMongoError
-                        ? "Cannot Connect to MongoDB"
-                        : "Failed to load data"}
-                    </p>
-                    <p
-                      className={`text-sm mt-2 ${
-                        isMongoError ? "text-yellow-600" : "text-red-600"
-                      }`}
-                    >
-                      {isMongoError
-                        ? "If you're using MongoDB Atlas M0 (free tier), the cluster may be paused after 30 days of inactivity. Please wait 10-30 seconds for it to wake up, then refresh the page."
-                        : "Make sure the GraphQL server is running"}
-                    </p>
-                    {isMongoError && (
-                      <div className="mt-4 rounded-lg bg-yellow-100 border border-yellow-300 p-3 text-left">
-                        <p className="text-xs font-medium text-yellow-800 mb-1">
-                          💡 MongoDB Atlas M0 clusters pause after 30 days of
-                          inactivity
-                        </p>
-                        <p className="text-xs text-yellow-700">
-                          The system is automatically waiting for the cluster to
-                          wake up. This usually takes 10-30 seconds.
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                            ? "text-yellow-600 dark:text-yellow-400"
+                            : "text-destructive"
+                        }`}
+                      >
+                        {isMongoError
+                          ? "Cannot Connect to MongoDB"
+                          : "Failed to load data"}
+                      </p>
+                      <p
+                        className={`text-sm mt-2 ${
+                          isMongoError
+                            ? "text-yellow-600/80 dark:text-yellow-400/80"
+                            : "text-destructive/80"
+                        }`}
+                      >
+                        {isMongoError
+                          ? "If you're using MongoDB Atlas M0 (free tier), the cluster may be paused after 30 days of inactivity. Please wait 10-30 seconds for it to wake up, then refresh the page."
+                          : "Make sure the GraphQL server is running"}
+                      </p>
+                      {isMongoError && (
+                        <div className="mt-4 rounded-lg bg-yellow-500/20 border border-yellow-500/30 p-3 text-left">
+                          <p className="text-xs font-medium text-yellow-700 dark:text-yellow-300 mb-1">
+                            MongoDB Atlas M0 clusters pause after 30 days of
+                            inactivity
+                          </p>
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                            The system is automatically waiting for the cluster
+                            to wake up. This usually takes 10-30 seconds.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 );
               })()}
             </div>
@@ -188,66 +180,21 @@ function HomePageContent() {
                     <StatsCard
                       title="Total Students"
                       value={totalStudents}
-                      color="bg-gradient-to-r from-blue-500 to-blue-600"
-                      icon={
-                        <svg
-                          className="w-6 h-6 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                          />
-                        </svg>
-                      }
+                      icon={<Users className="w-6 h-6" />}
                     />
                   </div>
                   <div className="min-w-[50vw] md:min-w-0 snap-start flex-shrink-0 md:flex-shrink relative z-10">
                     <StatsCard
                       title="Average Age"
                       value={averageAge > 0 ? `${averageAge}` : "0"}
-                      color="bg-gradient-to-r from-green-500 to-green-600"
-                      icon={
-                        <svg
-                          className="w-6 h-6 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                          />
-                        </svg>
-                      }
+                      icon={<BarChart3 className="w-6 h-6" />}
                     />
                   </div>
                   <div className="min-w-[50vw] md:min-w-0 snap-start flex-shrink-0 md:flex-shrink relative z-10">
                     <StatsCard
                       title="Active Students"
                       value={totalStudents}
-                      color="bg-gradient-to-r from-purple-500 to-purple-600"
-                      icon={
-                        <svg
-                          className="w-6 h-6 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      }
+                      icon={<UserCheck className="w-6 h-6" />}
                     />
                   </div>
                 </div>
@@ -257,10 +204,10 @@ function HomePageContent() {
               {recentStudents.length > 0 && (
                 <div className="relative">
                   <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-2xl font-bold text-foreground mb-2">
                       New Students
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground">
                       {recentStudents.length} students who have joined recently
                     </p>
                   </div>
@@ -284,263 +231,195 @@ function HomePageContent() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16">
+      <section className="py-16 bg-muted/50 overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Featured Features
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               This application is equipped with various advanced features to
               manage student data
             </p>
           </div>
+        </div>
 
-          <div className="relative -mx-4 md:mx-0">
-            <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto snap-x snap-mandatory scrollbar-hide md:overflow-visible py-4 pb-6 md:pb-4 scroll-smooth px-4 md:px-0">
-              {/* Feature 1 */}
-              <div className="max-w-[70vw]  snap-start flex-shrink-0 md:flex-shrink bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100 relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-6">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Real-time Search
-                </h3>
-                <p className="text-gray-600">
-                  Search students by name, email, or class with results
-                  appearing instantly using GraphQL.
-                </p>
+        <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory py-4 pb-6 scroll-smooth px-4 md:px-[max(1rem,calc((100vw-1280px)/2+1rem))]">
+          {/* Feature 1 */}
+          <Card className="min-w-[280px] max-w-[320px] snap-start flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 text-primary-foreground">
+                <Search className="w-6 h-6" />
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                Real-time Search
+              </h3>
+              <p className="text-muted-foreground">
+                Search students by name, email, or class with results appearing
+                instantly using GraphQL.
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Feature 2 */}
-              <div className="max-w-[70vw] snap-start flex-shrink-0 md:flex-shrink bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100 relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-6">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  CRUD Operations
-                </h3>
-                <p className="text-gray-600">
-                  Add, edit, delete, and view student details with an intuitive
-                  and responsive interface.
-                </p>
+          {/* Feature 2 */}
+          <Card className="min-w-[280px] max-w-[320px] snap-start flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 text-primary-foreground">
+                <Settings2 className="w-6 h-6" />
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                CRUD Operations
+              </h3>
+              <p className="text-muted-foreground">
+                Add, edit, delete, and view student details with an intuitive
+                and responsive interface.
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Feature 3 */}
-              <div className="max-w-[70vw]  snap-start flex-shrink-0 md:flex-shrink bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100 relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-6">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Async Data Fetching
-                </h3>
-                <p className="text-gray-600">
-                  Efficient data fetching with a smooth and user-friendly
-                  asynchronous.
-                </p>
+          {/* Feature 3 */}
+          <Card className="min-w-[280px] max-w-[320px] snap-start flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 text-primary-foreground">
+                <BarChart3 className="w-6 h-6" />
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                Async Data Fetching
+              </h3>
+              <p className="text-muted-foreground">
+                Efficient data fetching with a smooth and user-friendly
+                asynchronous.
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Feature 4 */}
-              <div className="max-w-[70vw] snap-start flex-shrink-0 md:flex-shrink bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100 relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-6">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Form Validation
-                </h3>
-                <p className="text-gray-600">
-                  Comprehensive form validation to ensure that the data entered
-                  is always valid and consistent.
-                </p>
+          {/* Feature 4 */}
+          <Card className="min-w-[280px] max-w-[320px] snap-start flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 text-primary-foreground">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                Form Validation
+              </h3>
+              <p className="text-muted-foreground">
+                Comprehensive form validation to ensure that the data entered is
+                always valid and consistent.
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Feature 5 */}
-              <div className="max-w-[70vw] snap-start flex-shrink-0 md:flex-shrink bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100 relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center mb-6">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  High Performance
-                </h3>
-                <p className="text-gray-600">
-                  Optimized queries with GraphQL and caching for extremely fast
-                  application performance.
-                </p>
+          {/* Feature 5 */}
+          <Card className="min-w-[280px] max-w-[320px] snap-start flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 text-primary-foreground">
+                <Zap className="w-6 h-6" />
               </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                High Performance
+              </h3>
+              <p className="text-muted-foreground">
+                Optimized queries with GraphQL and caching for extremely fast
+                application performance.
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Feature 6 */}
-              <div className="max-w-[70vw] snap-start flex-shrink-0 md:flex-shrink bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-100 relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mb-6">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Responsive Design
-                </h3>
-                <p className="text-gray-600">
-                  Responsive and mobile-friendly interface, can be accessed
-                  perfectly on all devices.
-                </p>
+          {/* Feature 6 */}
+          <Card className="min-w-[280px] max-w-[320px] snap-start flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 text-primary-foreground">
+                <Smartphone className="w-6 h-6" />
               </div>
-            </div>
-          </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                Responsive Design
+              </h3>
+              <p className="text-muted-foreground">
+                Responsive and mobile-friendly interface, can be accessed
+                perfectly on all devices.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Tech Stack Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
               Technologies Used
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground">
               Built with modern and reliable technologies
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-xl">Next</span>
+              <div className="w-16 h-16 bg-foreground rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-background font-bold text-xl">Next</span>
               </div>
-              <h3 className="font-semibold text-gray-900">Next.js</h3>
-              <p className="text-sm text-gray-600">React Framework</p>
+              <h3 className="font-semibold text-foreground">Next.js</h3>
+              <p className="text-sm text-muted-foreground">React Framework</p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <span className="text-white font-bold text-xl">M</span>
               </div>
-              <h3 className="font-semibold text-gray-900">MongoDB</h3>
-              <p className="text-sm text-gray-600">NoSQL Database</p>
+              <h3 className="font-semibold text-foreground">MongoDB</h3>
+              <p className="text-sm text-muted-foreground">NoSQL Database</p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-pink-600 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <span className="text-white font-bold text-xl">GQL</span>
               </div>
-              <h3 className="font-semibold text-gray-900">GraphQL</h3>
-              <p className="text-sm text-gray-600">Query Language</p>
+              <h3 className="font-semibold text-foreground">GraphQL</h3>
+              <p className="text-sm text-muted-foreground">Query Language</p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <span className="text-white font-bold text-xl">TS</span>
               </div>
-              <h3 className="font-semibold text-gray-900">TypeScript</h3>
-              <p className="text-sm text-gray-600">Type Safety</p>
+              <h3 className="font-semibold text-foreground">TypeScript</h3>
+              <p className="text-sm text-muted-foreground">Type Safety</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600">
+      <section className="py-16 bg-primary">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Try?</h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-primary-foreground mb-4">
+            Ready to Try?
+          </h2>
+          <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
             Explore and experience all student management features.
           </p>
-          <Link
-            href="/src"
-            className="inline-flex items-center px-8 py-4 text-lg font-medium text-blue-600 bg-white rounded-lg hover:bg-gray-50 transform hover:scale-105 transition-all duration-200 shadow-lg"
+          <Button
+            size="lg"
+            variant="secondary"
+            asChild
+            className="shadow-lg hover:shadow-xl"
           >
-            Start Now
-            <svg
-              className="ml-2 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </Link>
+            <Link href="/src" className="gap-2">
+              Start Now
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="border-t bg-card py-8">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            © 2025 Students Data with GraphQL. Built with ❤️ using Next.js,
-            MongoDB and GraphQL.
+          <p className="text-muted-foreground">
+            © 2025 Students Data with GraphQL. Built with Next.js, MongoDB and
+            GraphQL.
           </p>
         </div>
       </footer>

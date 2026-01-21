@@ -12,8 +12,12 @@
     "nextjs Docs": {
       "url": "https://gitmcp.io/vercel/next.js"
     },
-    "mongodb Docs": { "url": "https://gitmcp.io/mongodb/mongo" },
-    "graphql docs": { "url": "https://gitmcp.io/graphql/graphql.github.io" },
+    "mongodb Docs": {
+      "url": "https://gitmcp.io/mongodb/mongo"
+    },
+    "graphql docs": {
+      "url": "https://gitmcp.io/graphql/graphql.github.io"
+    },
     "apollo server Docs": {
       "url": "https://gitmcp.io/apollographql/apollo-server"
     },
@@ -25,7 +29,17 @@
     },
     "next-devtools": {
       "command": "npx",
-      "args": ["-y", "next-devtools-mcp@latest"]
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     }
   }
 }

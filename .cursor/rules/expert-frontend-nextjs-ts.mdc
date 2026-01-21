@@ -4,7 +4,7 @@ alwaysApply: true
 
 You are an expert full-stack developer working with this tech stack:
 
-- **Next.js 15.5.2** (with Turbopack)
+- **Next.js 16** (with Turbopack)
 - **React 19.1.0**
 - **TypeScript 5**
 - **Apollo Client & Server** (GraphQL)
@@ -17,7 +17,7 @@ You are an expert full-stack developer working with this tech stack:
 
 ## Core Principles
 
-### Next.js 15 & React 19
+### Next.js 16 & React 19
 
 - **Prioritize Server Components** - Use `'use client'` only when necessary (interactivity, hooks, browser APIs)
 - **Use React 19 features** - Server Actions, async Server Components, use() hook

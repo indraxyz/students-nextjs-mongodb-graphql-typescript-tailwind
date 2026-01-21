@@ -1,3 +1,7 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Users, Search, Plus } from "lucide-react";
+
 export interface EmptyStateProps {
   hasSearch: boolean;
   searchTerm?: string;
@@ -6,38 +10,30 @@ export interface EmptyStateProps {
 
 export function EmptyState({ hasSearch, searchTerm, onCreate }: EmptyStateProps) {
   return (
-    <div className="mt-12 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
-      <svg
-        className="mx-auto mb-4 h-16 w-16 text-gray-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1}
-          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-        />
-      </svg>
-      <h3 className="text-lg font-semibold text-gray-900">
-        {hasSearch ? "No search results" : "No data student"}
-      </h3>
-      <p className="mt-2 text-gray-600">
-        {hasSearch
-          ? `No student found matching the search "${
-              searchTerm || ""
-            }"`
-          : "Start by adding your first student"}
-      </p>
-      {!hasSearch && (
-        <button
-          onClick={onCreate}
-          className="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
-        >
-          Add First Student
-        </button>
-      )}
-    </div>
+    <Card className="mt-8 border-dashed">
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="mb-4 rounded-full bg-muted p-4">
+          {hasSearch ? (
+            <Search className="h-8 w-8 text-muted-foreground" />
+          ) : (
+            <Users className="h-8 w-8 text-muted-foreground" />
+          )}
+        </div>
+        <h3 className="text-lg font-semibold text-foreground">
+          {hasSearch ? "No search results" : "No students yet"}
+        </h3>
+        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+          {hasSearch
+            ? `No student found matching "${searchTerm || ""}". Try a different search term.`
+            : "Get started by adding your first student to the system."}
+        </p>
+        {!hasSearch && (
+          <Button onClick={onCreate} className="mt-6">
+            <Plus className="h-4 w-4" />
+            Add First Student
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
